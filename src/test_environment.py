@@ -1,6 +1,8 @@
 from .simulator import Environment, Domain, CAState
 
-environment = Environment.from_json_file("dataset/environments/environment-example-supermarket.json")
+environment = Environment.from_json_file(
+    "dataset/environments/environment-example-supermarket.json"
+)
 
 count = 1
 for cell1D in environment.domains[0].cells:
