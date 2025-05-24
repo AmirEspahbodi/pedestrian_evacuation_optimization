@@ -1,7 +1,7 @@
 [project]
-name = "cellular-automata"
+name = "PEO"
 version = "0.1.0"
-description = ""
+description = "pedestrian-evacuation-optimization"
 authors = [
     {name = "amir.espahbodi",email = "dev.amir.espahbodi@gmail.com"}
 ]
