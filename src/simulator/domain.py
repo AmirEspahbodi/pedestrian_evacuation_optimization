@@ -16,8 +16,9 @@ class Domain(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
+        print(f"Initializing Domain with width={self.width}, height={self.height}, ")
         self._storage_cells = self._initialize_grid_cells()
-        self._initialize_grid_cells()
+        self._initialize_cell_states()
 
     def _initialize_grid_cells(self) -> List[List[CellularAutomata]]:
         grid = [
@@ -48,23 +49,23 @@ class Domain(BaseModel):
             if self.width + self.height < perimeter < (2 * self.width + self.height)
             else (self.height) - (perimeter - (2 * self.width + self.height))
         )
-        return height, width
+        return height-1, width-1
 
 
     def _initialize_cell_states(
         self,
-        accesses: list[Access],  # Pα, Wα
-        obstacles: list[Obstacle],
     ):
-        for access in accesses:
+        for access in self.accesses:
             pa, wa = access.shape.pa, access.shape.wa  # Pα, Wα
             for i in range(pa, pa + wa):
                 height, width = self._get_perimeter_coordinates(i)
-                self.cells[height][width].state = CAState.ACCESS
-        for obstacle in obstacles:
-            for y in range(obstacle.shape.topLeft.x, obstacle.shape.topLeft.y + obstacle.shape.height):
-                for x in range(obstacle.shape.topLeft.x, obstacle.shape.topLeft.y + obstacle.shape.width):
-                    self.cells[y][x].state = CAState.OBSTACLE
+                self._storage_cells[height][width].state = CAState.ACCESS
+        for obstacle in self.obstacles:
+            # print(f"Obstacle at {obstacle.shape.topLeft.x}, {obstacle.shape.topLeft.y} with width={obstacle.shape.width} and height={obstacle.shape.height}")
+            # Fill the grid with the obstacle state
+            for y in range(obstacle.shape.topLeft.y, obstacle.shape.topLeft.y + obstacle.shape.height):
+                for x in range(obstacle.shape.topLeft.x, obstacle.shape.topLeft.x + obstacle.shape.width):
+                    self._storage_cells[y][x].state = CAState.OBSTACLE
 
 
     @property

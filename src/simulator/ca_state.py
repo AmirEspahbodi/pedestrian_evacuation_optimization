@@ -8,7 +8,7 @@ class CAState(StrEnum):
 
     EMPTY = "empty"
     OBSTACLE = "abstacle"
-    ACCUPIED = "occupied"
+    OCCUPIED = "occupied"
     ACCESS = "access"
 
     def __repr__(self) -> str:

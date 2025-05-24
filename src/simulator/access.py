@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Literal
 
 
-class Shape(BaseModel):
+class ShapeAccess(BaseModel):
     type: Literal["rectangle"]
     pa: int
     wa: int
@@ -10,4 +10,4 @@ class Shape(BaseModel):
 
 class Access(BaseModel):
     id: int
-    shape: Shape
+    shape: ShapeAccess
