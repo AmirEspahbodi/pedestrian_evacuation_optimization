@@ -183,7 +183,7 @@ class GridWidget(QWidget):
 
     def setZoom(self, zoom_level: int):
         """Adjust cell size for zoom functionality."""
-        self.cell_size = max(10, min(100, zoom_level))
+        self.cell_size = max(5, min(100, zoom_level))
         self.updateSize()
         self.update()
 
@@ -271,8 +271,8 @@ class DomainVisualizerWindow(QMainWindow):
             item_label.setStyleSheet(f"""
                 background-color: {bg_color};
                 color: {text_color};
-                padding: 4px 8px;
-                border-radius: 3px;
+                padding: 3px 6px;
+                border-radius: 1px;
                 font-weight: bold;
             """)
             legend_layout.addWidget(item_label)
@@ -347,7 +347,7 @@ class DomainVisualizerWindow(QMainWindow):
     def zoomOut(self):
         """Decrease zoom level."""
         current_size = self.grid_widget.cell_size
-        self.grid_widget.setZoom(current_size - 15)
+        self.grid_widget.setZoom(current_size - 10)
         self.status_bar.showMessage(
             f"Zoom: {self.grid_widget.cell_size}px per cell", 2000
         )
