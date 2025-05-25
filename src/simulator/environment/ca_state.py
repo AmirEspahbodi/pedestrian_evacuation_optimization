@@ -6,6 +6,7 @@ class CAState(StrEnum):
     OBSTACLE = "abstacle"
     OCCUPIED = "occupied"
     ACCESS = "access"
+    ACCESS_OCCUPIED = "access_occupied"
 
     def __repr__(self) -> str:
         return self.value

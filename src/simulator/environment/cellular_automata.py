@@ -7,5 +7,8 @@ class CellularAutomata(BaseModel):
     x: int
     y: int
     static_filed: float = float("inf")
+    crowd_repulsion: float = 0.0
+    attraction: float = 0.0
+    desirability: float = 0.0
 
     model_config = ConfigDict(validate_assignment=True)

@@ -181,3 +181,13 @@ class Domain(BaseModel):
                 if cell.state == CAState.OBSTACLE:
                     continue
                 cell.static_filed = 1 - (cell.static_filed / max_shortest_path)
+
+    def get_pedestrians(self) -> list[CellularAutomata]:
+        """Get all pedestrians in the environment."""
+        pedestrians = []
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell.state == "occupied":
+                    pedestrians.append(cell)
+        return pedestrians
