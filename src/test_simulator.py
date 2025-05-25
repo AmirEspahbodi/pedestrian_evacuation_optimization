@@ -5,6 +5,7 @@ from .simulator.ca_model import CellularAutomatonModelProcess
 from PyQt6.QtWidgets import QApplication
 import time
 
+
 def main():
     """Main entry point for the application."""
     app = QApplication(sys.argv)
@@ -20,7 +21,7 @@ def main():
     window.show()
 
     CellularAutomatonModelProcess(window, environment).process()
-    
+
     sys.exit(app.exec())
 
 

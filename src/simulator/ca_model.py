@@ -7,17 +7,20 @@ from src.config import SimulationConfig
 from .environment import Environment, CAState, CellularAutomata, Domain
 from .draw_environment import DomainVisualizerWindow
 
+
 class CellularAutomatonModelProcess:
     def __init__(self, window: DomainVisualizerWindow, environment: Environment):
         self.window = window
         self.environment = environment
         pass
-    
-    def process(self, ):
+
+    def process(
+        self,
+    ):
         for time_step in range(0, SimulationConfig.simulator.time_limit):
             self._calculate_desirability(self.environment.domains[0])
             self._move_pedestrian(self.environment.domains[0])
-            
+
             self.window.updateGrid()
             time.sleep(1)
             print(f"Time step: {time_step}")
@@ -41,7 +44,6 @@ class CellularAutomatonModelProcess:
             time.sleep(0.01)
             print(f"{transition_probability}\n")
 
-            
     def _transition_function(
         self, domain: Domain, y: int, x: int
     ) -> list[tuple[CellularAutomata, float]]:
@@ -57,7 +59,6 @@ class CellularAutomatonModelProcess:
             for neighbor_cell in neighbors
         ]
         return neighbors_transition
-        
 
     def _calculate_desirability(self, domain: Domain):
         self._calculate_attraction(domain)
@@ -70,10 +71,9 @@ class CellularAutomatonModelProcess:
                 min_attraction = min(
                     [
                         neighbor.attraction
-                        for neighbor in self.__reachable_neighborhood(
-                            domain, y, x
-                        )
-                    ], default=0.0
+                        for neighbor in self.__reachable_neighborhood(domain, y, x)
+                    ],
+                    default=0.0,
                 )
                 cell.desirability = 0.00001 + cell.attraction - min_attraction
 
@@ -113,8 +113,10 @@ class CellularAutomatonModelProcess:
                 (1, 0),
                 (1, 1),
             ]
-            if 0 <= y + yp < domain.height and 0 <= x + xp < domain.width and (
-                domain.cells[y + yp][x + xp].state != CAState.OBSTACLE and
-                domain.cells[y + yp][x + xp].state != CAState.OCCUPIED
-            ) 
+            if 0 <= y + yp < domain.height
+            and 0 <= x + xp < domain.width
+            and (
+                domain.cells[y + yp][x + xp].state != CAState.OBSTACLE
+                and domain.cells[y + yp][x + xp].state != CAState.OCCUPIED
+            )
         ]
