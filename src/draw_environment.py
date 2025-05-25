@@ -96,33 +96,34 @@ class GridWidget(QWidget):
 
         # Fill the cell with its color
         painter.fillRect(rect, color)
-        
+
         # Draw the static_field value
         painter.save()  # Save current painter state
-        
+
         # Set text color based on cell background for better contrast
         if cell.state == CAState.EMPTY:
             painter.setPen(Qt.GlobalColor.black)
         else:
             painter.setPen(Qt.GlobalColor.white)
-        
+
         # Format the static_field value (assuming it's a float)
         try:
-            field_value = f"{cell.static_filed:.2f}"  # Note: keeping the typo from original code
+            field_value = (
+                f"{cell.static_filed:.2f}"  # Note: keeping the typo from original code
+            )
         except (AttributeError, TypeError):
             field_value = "N/A"
-        
+
         # Set font size based on cell size for better scaling
         font = painter.font()
         font_size = max(4, min(int(self.cell_size * 0.2), 8))  # Dynamic font size
         font.setPointSize(font_size)
         painter.setFont(font)
-        
+
         # Draw text centered in the cell
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, field_value)
-        
-        painter.restore()  # Restore painter state
 
+        painter.restore()  # Restore painter state
 
     def drawGrid(self, painter: QPainter):
         """Draw grid lines."""

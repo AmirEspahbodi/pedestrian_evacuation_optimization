@@ -6,6 +6,6 @@ class CellularAutomata(BaseModel):
     state: CAState
     x: int
     y: int
-    static_filed: float = float('inf')
+    static_filed: float = float("inf")
 
     model_config = ConfigDict(validate_assignment=True)
