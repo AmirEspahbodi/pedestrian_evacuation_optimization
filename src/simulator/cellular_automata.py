@@ -1,12 +1,11 @@
-from .ca_state import CAState
 from pydantic import BaseModel, ConfigDict
+from .ca_state import CAState
 
 
 class CellularAutomata(BaseModel):
-    """Represents a single cell in the grid."""
-
     state: CAState
     x: int
     y: int
+    static_filed: float = float('inf')
 
     model_config = ConfigDict(validate_assignment=True)

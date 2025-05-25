@@ -2,10 +2,6 @@ from enum import StrEnum
 
 
 class CAState(StrEnum):
-    """
-    Enum for the states of a cellular automaton.
-    """
-
     EMPTY = "empty"
     OBSTACLE = "abstacle"
     OCCUPIED = "occupied"
