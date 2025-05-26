@@ -1,7 +1,7 @@
 import sys
 from .simulator.environment import Environment
 from .simulator.draw_environment import DomainVisualizerWindow
-from .simulator.ca_model import CellularAutomatonModelProcess
+from .simulator.pedestrian_movement_process import PedestrianMovementModelProcess
 from PyQt6.QtWidgets import QApplication
 
 
@@ -19,7 +19,7 @@ def main():
     window = DomainVisualizerWindow(domain)
     window.show()
 
-    CellularAutomatonModelProcess(environment,window=window).process()
+    PedestrianMovementModelProcess(environment,window=window).process()
 
     sys.exit(app.exec())
 

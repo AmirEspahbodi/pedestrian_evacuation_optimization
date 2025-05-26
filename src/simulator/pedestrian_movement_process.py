@@ -8,7 +8,7 @@ from .environment import Environment, CAState, CellularAutomata, Domain
 from .draw_environment import DomainVisualizerWindow
 
 
-class CellularAutomatonModelProcess:
+class PedestrianMovementModelProcess:
     def __init__(self, environment: Environment, window: DomainVisualizerWindow|None = None):
         self.window = window
         self.environment = environment
