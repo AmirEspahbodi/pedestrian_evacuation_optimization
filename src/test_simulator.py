@@ -3,7 +3,6 @@ from .simulator.environment import Environment
 from .simulator.draw_environment import DomainVisualizerWindow
 from .simulator.ca_model import CellularAutomatonModelProcess
 from PyQt6.QtWidgets import QApplication
-import time
 
 
 def main():
@@ -20,7 +19,7 @@ def main():
     window = DomainVisualizerWindow(domain)
     window.show()
 
-    CellularAutomatonModelProcess(window, environment).process()
+    CellularAutomatonModelProcess(environment,window=window).process()
 
     sys.exit(app.exec())
 

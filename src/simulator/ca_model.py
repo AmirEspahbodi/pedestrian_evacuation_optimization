@@ -9,7 +9,7 @@ from .draw_environment import DomainVisualizerWindow
 
 
 class CellularAutomatonModelProcess:
-    def __init__(self, window: DomainVisualizerWindow, environment: Environment):
+    def __init__(self, environment: Environment, window: DomainVisualizerWindow|None = None):
         self.window = window
         self.environment = environment
         pass
@@ -21,8 +21,8 @@ class CellularAutomatonModelProcess:
             self._calculate_desirability(self.environment.domains[0])
             self._move_pedestrian(self.environment.domains[0])
 
-            self.window.updateGrid()
-            time.sleep(1)
+            if self.window:
+                self.window.updateGrid()
             print(f"Time step: {time_step}")
 
     def _move_pedestrian(self, domain: Domain):
@@ -31,6 +31,10 @@ class CellularAutomatonModelProcess:
         while pedestrians:
             pedestrian = pedestrians.pop()
             y, x = pedestrian.y, pedestrian.x
+            if pedestrian.state == CAState.ACCESS_OCCUPIED:
+                # If the pedestrian is already in an access cell, skip moving
+                pedestrian.state = CAState.ACCESS
+                continue
             transition_probability = self._transition_function(domain, y, x)
             neighbor_to_move = select_by_probability_normalized(transition_probability)
             if neighbor_to_move.state == CAState.EMPTY:
@@ -39,10 +43,12 @@ class CellularAutomatonModelProcess:
             elif neighbor_to_move.state == CAState.ACCESS:
                 neighbor_to_move.state = CAState.ACCESS_OCCUPIED
                 pedestrian.state = CAState.EMPTY
+            
+                
 
-            self.window.updateGrid()
-            time.sleep(0.01)
-            print(f"{transition_probability}\n")
+            if self.window:
+                self.window.updateGrid()
+                time.sleep(0.01)
 
     def _transition_function(
         self, domain: Domain, y: int, x: int

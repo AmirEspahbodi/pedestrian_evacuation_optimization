@@ -66,6 +66,7 @@ class EnvironmentConfig(BaseModel):
     """Root configuration model for simulation environment."""
 
     num_simulations: int = Field(alias="numSimulations", gt=0)
+    K: int = Field(alias="KNeighborSlectingToMove", ge=1)
     simulator: Simulator
     crowd: Crowd
 

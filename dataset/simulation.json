@@ -1,5 +1,6 @@
 {
 	"numSimulations" : 20,
+    "KNeighborSlectingToMove": 3,
     "simulator": {
         "timeLimit": 60,
         "simulatorType" : "CA",
