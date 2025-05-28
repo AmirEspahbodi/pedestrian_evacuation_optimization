@@ -1,5 +1,8 @@
 import sys
-from .environment import Environment, Domain, CAState
+from .environment import Environment
+from .domain import Domain, CAState
+
+
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -24,7 +27,7 @@ class GridWidget(QWidget):
     def __init__(self, domain: "Domain", parent=None):
         super().__init__(parent)
         self.domain = domain
-        self.cell_size = 30  # Base size for each cell
+        self.cell_size = 7  # Base size for each cell
         self.grid_line_width = 1
         self.hover_cell = None
         self.selected_cell = None
@@ -84,8 +87,8 @@ class GridWidget(QWidget):
 
     def drawCell(self, painter: QPainter, x: int, y: int):
         """Draw a single cell."""
-        cell = self.domain.cells[y][x]
-        color = self.colors.get(cell.state, QColor(255, 255, 255))
+        state = self.domain._get_state(y, x)
+        color = self.colors.get(state, QColor(255, 255, 255))
 
         rect = QRect(
             int(x * self.cell_size + self.grid_line_width),
@@ -143,7 +146,7 @@ class GridWidget(QWidget):
 
             if 0 <= x < self.domain.width and 0 <= y < self.domain.height:
                 self.selected_cell = (x, y)
-                cell = self.domain.cells[y][x]
+                cell = self.domain._get_state(y, x)
                 self.cellClicked.emit(x, y, cell.state)
                 self.update()
 
@@ -154,7 +157,7 @@ class GridWidget(QWidget):
 
     def setZoom(self, zoom_level: int):
         """Adjust cell size for zoom functionality."""
-        self.cell_size = max(10, min(100, zoom_level))
+        self.cell_size = max(5, min(100, zoom_level))
         self.updateSize()
         self.update()
 
@@ -180,12 +183,7 @@ class DomainVisualizerWindow(QMainWindow):
             self.step_label.setText(f"Step: {self.step_count}")
 
             # Update status bar with current step information
-            occupied_count = sum(
-                1
-                for y in range(self.domain.height)
-                for x in range(self.domain.width)
-                if self.domain.cells[y][x].state == CAState.OCCUPIED
-            )
+            occupied_count = sum(self.domain.peds)
             self.status_bar.showMessage(
                 f"Step {self.step_count} - Occupied cells: {occupied_count}"
             )
@@ -353,7 +351,7 @@ class DomainVisualizerWindow(QMainWindow):
     def zoomIn(self):
         """Increase zoom level."""
         current_size = self.grid_widget.cell_size
-        self.grid_widget.setZoom(current_size + 10)
+        self.grid_widget.setZoom(current_size + 7)
         self.status_bar.showMessage(
             f"Zoom: {self.grid_widget.cell_size}px per cell", 2000
         )
@@ -361,14 +359,14 @@ class DomainVisualizerWindow(QMainWindow):
     def zoomOut(self):
         """Decrease zoom level."""
         current_size = self.grid_widget.cell_size
-        self.grid_widget.setZoom(current_size - 15)
+        self.grid_widget.setZoom(current_size - 7)
         self.status_bar.showMessage(
             f"Zoom: {self.grid_widget.cell_size}px per cell", 2000
         )
 
     def resetView(self):
         """Reset to default zoom level."""
-        self.grid_widget.setZoom(30)
+        self.grid_widget.setZoom(7)
         self.grid_widget.selected_cell = None
         self.grid_widget.update()
         self.status_bar.showMessage("View reset", 2000)

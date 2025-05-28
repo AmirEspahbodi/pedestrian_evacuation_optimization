@@ -1,8 +1,11 @@
 import sys
 from .simulator.environment import Environment
-from .simulator.draw_environment import DomainVisualizerWindow
-from .simulator.pedestrian_movement_process import PedestrianMovementModelProcess
+from .simulator.draw import DomainVisualizerWindow
+from .simulator.simulation_engine import main as engine_main
+
+# from .simulator.pedestrian_evacuation.pedestrian_movement_process import PedestrianMovementModelProcess
 from PyQt6.QtWidgets import QApplication
+import numpy as np
 
 
 def main():
@@ -19,7 +22,10 @@ def main():
     window = DomainVisualizerWindow(domain)
     window.show()
 
-    PedestrianMovementModelProcess(environment,window=window).process()
+    engine_main(domain=domain, window=window)
+
+    print("Simulation completed.")
+    print(f"pedestrian left in are {domain.get_left_pedestrians()}.")
 
     sys.exit(app.exec())
 
