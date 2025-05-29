@@ -2,6 +2,8 @@ import sys
 from .simulator.environment import Environment
 from .simulator.draw import DomainVisualizerWindow
 from .simulator.simulation_engine import main as engine_main
+from .optimizer.fitness import fitness
+import time
 
 # from .simulator.pedestrian_evacuation.pedestrian_movement_process import PedestrianMovementModelProcess
 from PyQt6.QtWidgets import QApplication
@@ -18,14 +20,21 @@ def main():
     )
 
     # Create and show main window
-    window = DomainVisualizerWindow(environment.domains[0])
+    window = DomainVisualizerWindow(environment.domains[5])
     window.show()
 
-    engine_main(domain=environment.domains[0], window=window)
-    print(f"len obstacles = {len(environment.domains[0].obstacles)} .")
+    engine_main(domain=environment.domains[5], window=window)
+    environment.domains[5].is_simulation_finished = True
+    environment.domains[5].calculate_nearest_exit_distances()
+
+    window.updateGrid()
+
+    fitness(domain=environment.domains[5])
 
     print("Simulation completed.")
-    print(f"pedestrian left in are {environment.domains[0].get_left_pedestrians()}.")
+    print(
+        f"pedestrian left in are {environment.domains[5].get_left_pedestrians_count()}."
+    )
 
     sys.exit(app.exec())
 

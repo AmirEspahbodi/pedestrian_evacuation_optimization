@@ -154,7 +154,7 @@ def plot_peds(domain, walls, i):
     ax.cla()
     cmap = plt.get_cmap("gray")
     cmap.set_bad(color="b", alpha=0.8)
-    N = domain.get_left_pedestrians()
+    N = domain.get_left_pedestrians_count()
     # print N, type(N)
     # print domain.peds+walls
     # ax.axes.autoscale(False)
@@ -338,6 +338,8 @@ def seq_update_cells(domain, sff, dff, kappaD, kappaS, shuffle, reverse):
                 tmp_peds[neighbor] = 1
                 tmp_peds[i, j] = 0
                 dff_diff[i, j] += 1
+
+                domain.move_ped(cell, neighbor)
                 break
 
     return tmp_peds, dff_diff
@@ -375,10 +377,10 @@ def simulate(args, domain, window):
     for t in steps:  # simulation loop
         if window:
             window.updateGrid()
-            time.sleep(0.1)
+            time.sleep(0.01)
         print(
             "\tn: %3d ----  t: %3d |  N: %3d"
-            % (n, t, int(domain.get_left_pedestrians()))
+            % (n, t, int(domain.get_left_pedestrians_count()))
         )
         if drawP:
             plot_peds(domain, walls, t)
@@ -391,8 +393,10 @@ def simulate(args, domain, window):
         if giveD:
             old_dffs.append((t, dff.copy()))
 
+        domain.increase_pedestrians_t_star()
+
         if (
-            domain.get_left_pedestrians() == 0
+            domain.get_left_pedestrians_count() == 0
         ):  # is everybody out? TODO: check this. Some bug is lurking here
             print("Quite simulation")
             break

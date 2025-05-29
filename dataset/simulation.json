@@ -1,7 +1,7 @@
 {
 	"numSimulations" : 20,
     "simulator": {
-        "timeLimit": 100,
+        "timeLimit": 60,
         "cellularAutomatonParameters": {
             "kappaStatic": 2.0,
             "kappaDynamic": 1.0,

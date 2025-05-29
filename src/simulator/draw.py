@@ -1,4 +1,5 @@
 import sys
+import random
 from .domain import Domain, CAState
 
 
@@ -15,7 +16,7 @@ from PyQt6.QtWidgets import (
     QFrame,
 )
 from PyQt6.QtCore import Qt, QRect, pyqtSignal
-from PyQt6.QtGui import QPainter, QColor, QPen, QMouseEvent
+from PyQt6.QtGui import QPainter, QColor, QPen, QMouseEvent, QFont
 
 
 class GridWidget(QWidget):
@@ -26,10 +27,16 @@ class GridWidget(QWidget):
     def __init__(self, domain: "Domain", parent=None):
         super().__init__(parent)
         self.domain = domain
-        self.cell_size = 7  # Base size for each cell
+        self.cell_size = 10  # Base size for each cell
         self.grid_line_width = 1
         self.hover_cell = None
         self.selected_cell = None
+
+        # Initialize random numbers for each cell
+        self.cell_numbers = {}
+        for y in range(self.domain.height):
+            for x in range(self.domain.width):
+                self.cell_numbers[(x, y)] = random.randint(0, 99)
 
         # Color scheme with modern, accessible colors
         self.colors = {
@@ -98,6 +105,24 @@ class GridWidget(QWidget):
 
         painter.fillRect(rect, color)
 
+        # Draw random number in cell if cell is large enough
+        if self.domain.is_simulation_finished:
+            number = "{:.2f}".format(self.domain.cells[y][x].static_field)
+
+            # Set font size based on cell size
+            font_size = max(4, self.cell_size // 2 - 5)
+            font = QFont("Arial", font_size)
+            painter.setFont(font)
+
+            # Set text color based on background (white text on dark backgrounds, black on light)
+            if state in [CAState.OBSTACLE]:
+                painter.setPen(QColor(255, 255, 255))  # White text
+            else:
+                painter.setPen(QColor(0, 0, 0))  # Black text
+
+            # Draw the number centered in the cell
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, str(number))
+
     def drawGrid(self, painter: QPainter):
         """Draw grid lines."""
         pen = QPen(self.grid_color, self.grid_line_width)
@@ -145,8 +170,8 @@ class GridWidget(QWidget):
 
             if 0 <= x < self.domain.width and 0 <= y < self.domain.height:
                 self.selected_cell = (x, y)
-                cell = self.domain._get_state(y, x)
-                self.cellClicked.emit(x, y, cell.state)
+                state = self.domain._get_state(y, x)
+                self.cellClicked.emit(x, y, state)
                 self.update()
 
     def leaveEvent(self, event):
@@ -350,7 +375,7 @@ class DomainVisualizerWindow(QMainWindow):
     def zoomIn(self):
         """Increase zoom level."""
         current_size = self.grid_widget.cell_size
-        self.grid_widget.setZoom(current_size + 7)
+        self.grid_widget.setZoom(current_size + 3)
         self.status_bar.showMessage(
             f"Zoom: {self.grid_widget.cell_size}px per cell", 2000
         )
@@ -358,14 +383,14 @@ class DomainVisualizerWindow(QMainWindow):
     def zoomOut(self):
         """Decrease zoom level."""
         current_size = self.grid_widget.cell_size
-        self.grid_widget.setZoom(current_size - 7)
+        self.grid_widget.setZoom(current_size - 3)
         self.status_bar.showMessage(
             f"Zoom: {self.grid_widget.cell_size}px per cell", 2000
         )
 
     def resetView(self):
         """Reset to default zoom level."""
-        self.grid_widget.setZoom(7)
+        self.grid_widget.setZoom(3)
         self.grid_widget.selected_cell = None
         self.grid_widget.update()
         self.status_bar.showMessage("View reset", 2000)

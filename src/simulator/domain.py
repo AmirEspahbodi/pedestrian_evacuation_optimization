@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict, field_validator, ValidationInfo
-from typing import List, Any
+from pydantic import BaseModel, ConfigDict, field_validator, ValidationInfo, PrivateAttr
+from typing import List, Any, Tuple, Deque
 from random import randint
 from pydantic import BaseModel, ConfigDict
 from dataclasses import dataclass
@@ -13,6 +13,11 @@ from .cellular_automata import CellularAutomata
 from .ca_state import CAState
 from .access import Access
 from .obstacle import Obstacle
+from enum import StrEnum
+from typing import List
+from collections import deque
+import math
+from pydantic import BaseModel, ConfigDict
 
 
 @dataclass
@@ -22,13 +27,9 @@ class Pedestrian:
     id: int
     x: int
     y: int
-    steps_taken: int = 0
-
-    def move_to(self, new_x: int, new_y: int) -> None:
-        """Move pedestrian to new position."""
-        self.x = new_x
-        self.y = new_y
-        self.steps_taken += 1
+    t_star: int
+    is_exited: bool = False
+    d_star: int | None = None
 
 
 class Domain(BaseModel):
@@ -38,22 +39,18 @@ class Domain(BaseModel):
     accesses: list[Access]
     obstacles: list[Obstacle]
 
+    is_simulation_finished: bool = False
+
+    _storage_cells: List[List[CellularAutomata]] = PrivateAttr(default_factory=list)
+    _pedestrians: List[Pedestrian] = PrivateAttr(default_factory=list)
+
     peds: NDArray[np.int_] | None = None
     walls: NDArray[np.int_] | None = None
 
     @property
     @timing_decorator
     def cells(self) -> List[List[CellularAutomata]]:
-        grid = [
-            [
-                CellularAutomata(
-                    state=self._get_state(row_idx, col_idx), y=row_idx, x=col_idx
-                )
-                for col_idx in range(self.width)
-            ]
-            for row_idx in range(self.height)
-        ]
-        return grid
+        return self._storage_cells
 
     model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
 
@@ -62,9 +59,145 @@ class Domain(BaseModel):
         print(
             f"Initializing Domain {self.id} with width={self.width}, height={self.height}, "
         )
+
+        self._init_cells()
         self._init_walls()
         self._initialize_cell_states()
         self._initialize_pedestrians()
+
+    def increase_pedestrians_t_star(self):
+        for ped in self._pedestrians:
+            if ped.is_exited:
+                continue
+            ped.t_star += 1
+
+    def move_ped(self, cell: Tuple[int, int], neighbor: Tuple[int, int]):
+        current_ped = None
+        for ped in self._pedestrians:
+            if (ped.x, ped.y) == cell:
+                current_ped = ped
+                break
+        else:
+            raise RuntimeError(f"there is no pedestrian in cell {cell}")
+        if self._storage_cells[neighbor[1]][neighbor[0]].state == CAState.EMPTY:
+            self._storage_cells[current_ped.y][current_ped.x].state = CAState.EMPTY
+            self._storage_cells[neighbor[1]][neighbor[0]].state = CAState.OCCUPIED
+        if self._storage_cells[neighbor[1]][neighbor[0]].state == CAState.ACCESS:
+            self._storage_cells[current_ped.y][current_ped.x].state = CAState.EMPTY
+            self._storage_cells[neighbor[1]][
+                neighbor[0]
+            ].state = CAState.ACCESS_OCCUPIED
+
+        current_ped.x = neighbor[0]
+        current_ped.y = neighbor[1]
+
+        if self.self_is_access(neighbor):
+            current_ped.is_exited = True
+
+    def self_is_access(self, cell):
+        x, y = cell
+        if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
+            if self.walls[cell[0], cell[1]] == 1:
+                return True
+        return False
+
+    @field_validator("peds", "walls", mode="before")
+    @classmethod
+    def convert_to_numpy_array_if_needed(cls, value: Any) -> Any:
+        if not isinstance(value, np.ndarray):
+            try:
+                # Attempt to convert list of lists or similar to a NumPy array
+                converted_value = np.array(value)
+                return converted_value
+            except Exception as e:
+                raise ValueError(f"Could not convert value to NumPy array: {e}")
+        return value
+
+    @field_validator("peds", "walls", mode="after")
+    @classmethod
+    def check_is_2d(cls, value: NDArray, info: ValidationInfo) -> NDArray:
+        if value.ndim != 2:
+            raise ValueError(
+                f"Field '{info.field_name}' must be a 2D array, got {value.ndim} dimensions."
+            )
+        return value
+
+    def _get_state(self, y, x) -> CAState:
+        if self.walls[x][y] == -1:
+            return CAState.OBSTACLE
+        elif self.walls[x][y] == 1:
+            if self.peds[x][y] == 1:
+                return CAState.OCCUPIED
+            else:
+                if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
+                    return CAState.ACCESS
+                else:
+                    return CAState.EMPTY
+
+    def get_left_pedestrians_count(self) -> int:
+        pedestrians = 0
+        for y in range(1, self.height - 1):
+            for x in range(1, self.width - 1):
+                if self.peds[x][y] == 1:
+                    pedestrians += 1
+        return pedestrians
+
+    def get_exit_cells(self) -> List[tuple[int, int]]:
+        exit_cells = []
+        for y in range(0, self.height):
+            if self.walls[0][y] == 1:
+                exit_cells.append((0, y))
+            if self.walls[-1][y] == 1:
+                exit_cells.append((self.width - 1, y))
+        for x in range(0, self.width):
+            if self.walls[x][0] == 1:
+                exit_cells.append((x, 0))
+            if self.walls[x][-1] == 1:
+                exit_cells.append((x, self.height - 1))
+        return exit_cells
+
+    def _get_neighbors_with_distance(
+        self, y: int, x: int
+    ) -> List[Tuple[int, int, float]]:
+        neighbors = []
+
+        # 8-directional movement
+        directions = [
+            (-1, -1, math.sqrt(2)),
+            (-1, 0, 1.0),
+            (-1, 1, math.sqrt(2)),
+            (0, -1, 1.0),
+            (0, 1, 1.0),
+            (1, -1, math.sqrt(2)),
+            (1, 0, 1.0),
+            (1, 1, math.sqrt(2)),
+        ]
+
+        for dy, dx, dist in directions:
+            ny, nx = y + dy, x + dx
+            if 0 <= ny < self.height and 0 <= nx < self.width:
+                neighbors.append((ny, nx, dist))
+
+        return neighbors
+
+    def test_pedestrian(self):
+        count = self.get_left_pedestrians_count()
+        test_count = 0
+        for ped in self._pedestrians:
+            if not ped.is_exited:
+                test_count += 1
+        print(test_count)
+        print(count)
+        assert count == test_count
+
+    def _init_cells(self):
+        self._storage_cells = [
+            [
+                CellularAutomata(state=CAState.EMPTY, y=row_idx, x=col_idx)
+                for col_idx in range(self.width)
+            ]
+            for row_idx in range(self.height)
+        ]
 
     def _get_perimeter_coordinates(self, perimeter):
         width = (
@@ -96,6 +229,7 @@ class Domain(BaseModel):
             for i in range(pa, pa + wa):
                 height, width = self._get_perimeter_coordinates(i)
                 self.walls[width][height] = 1
+                self._storage_cells[height][width].state = CAState.ACCESS
         for obstacle in self.obstacles:
             # Fill the grid with the obstacle state
             for y in range(
@@ -107,6 +241,7 @@ class Domain(BaseModel):
                     obstacle.shape.topLeft.x + obstacle.shape.width,
                 ):
                     self.walls[x][y] = -1
+                    self._storage_cells[y][x].state = CAState.OBSTACLE
 
     @timing_decorator
     def _initialize_pedestrians(self):
@@ -128,28 +263,9 @@ class Domain(BaseModel):
         )
         for y, x in selected_pedestrians:
             self.peds[x][y] = 1  # Mark the cell as occupied
-            print(f"Adding pedestrian at (x={x}, y={y})")
-
-    @field_validator("peds", "walls", mode="before")
-    @classmethod
-    def convert_to_numpy_array_if_needed(cls, value: Any) -> Any:
-        if not isinstance(value, np.ndarray):
-            try:
-                # Attempt to convert list of lists or similar to a NumPy array
-                converted_value = np.array(value)
-                return converted_value
-            except Exception as e:
-                raise ValueError(f"Could not convert value to NumPy array: {e}")
-        return value
-
-    @field_validator("peds", "walls", mode="after")
-    @classmethod
-    def check_is_2d(cls, value: NDArray, info: ValidationInfo) -> NDArray:
-        if value.ndim != 2:
-            raise ValueError(
-                f"Field '{info.field_name}' must be a 2D array, got {value.ndim} dimensions."
+            self._pedestrians.append(
+                Pedestrian(x=x, y=y, id=np.sum(self.peds), t_star=0)
             )
-        return value
 
     def _init_obstacles(self):
         return np.ones((self.width, self.height), int)
@@ -165,36 +281,80 @@ class Domain(BaseModel):
         OBST[0, :] = OBST[-1, :] = OBST[:, -1] = OBST[:, 0] = -1
         self.walls = OBST
 
-    def _get_state(self, y, x) -> CAState:
-        if self.walls[x][y] == -1:
-            return CAState.OBSTACLE
-        elif self.walls[x][y] == 1:
-            if self.peds[x][y] == 1:
-                return CAState.OCCUPIED
-            else:
-                if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
-                    return CAState.ACCESS
-                else:
-                    return CAState.EMPTY
+    def calculate_nearest_exit_distances(self):
+        """
+        Calculate the nearest exit distance for each non-obstacle cell using multi-source BFS.
+        This algorithm efficiently finds the shortest path from each cell to any access point.
 
-    def get_left_pedestrians(self) -> List[Pedestrian]:
-        pedestrians = 0
-        for y in range(1, self.height - 1):
-            for x in range(1, self.width - 1):
-                if self.peds[x][y] == 1:
-                    pedestrians += 1
-        return pedestrians
+        Time Complexity: O(rows * cols)
+        Space Complexity: O(rows * cols)
+        """
+        if not self.cells or not self.cells[0]:
+            return
 
-    def get_exit_cells(self) -> List[tuple[int, int]]:
-        exit_cells = []
-        for y in range(0, self.height):
-            if self.walls[0][y] == 1:
-                exit_cells.append((0, y))
-            if self.walls[-1][y] == 1:
-                exit_cells.append((self.width - 1, y))
-        for x in range(0, self.width):
-            if self.walls[x][0] == 1:
-                exit_cells.append((x, 0))
-            if self.walls[x][-1] == 1:
-                exit_cells.append((x, self.height - 1))
-        return exit_cells
+        # Moore neighborhood: 8 directions (including diagonals)
+        directions = [
+            (-1, -1, math.sqrt(2)),
+            (-1, 0, 1),
+            (-1, 1, math.sqrt(2)),  # Top row
+            (0, -1, 1),
+            (0, 1, 1),  # Middle row (excluding center)
+            (1, -1, math.sqrt(2)),
+            (1, 0, 1),
+            (1, 1, math.sqrt(2)),  # Bottom row
+        ]
+
+        # Initialize queue for multi-source BFS
+        queue: Deque[Tuple[int, int, float]] = deque()
+        visited = set()
+
+        # Reset static_field for all cells and find access cells
+        for i in range(self.height):
+            for j in range(self.width):
+                cell = self.cells[i][j]
+
+                # Reset distance
+                cell.static_field = float("inf")
+
+                # Add access cells as starting points for BFS
+                if cell.state in [CAState.ACCESS, CAState.ACCESS_OCCUPIED]:
+                    cell.static_field = 0.0
+                    queue.append((i, j, 0.0))
+                    visited.add((i, j))
+
+        # Multi-source BFS to find shortest distances
+        while queue:
+            row, col, current_distance = queue.popleft()
+
+            # Skip if we've found a better path to this cell
+            if current_distance > self.cells[row][col].static_field:
+                continue
+
+            # Explore all 8 neighbors (Moore neighborhood)
+            for dr, dc, distance in directions:
+                new_row, new_col = row + dr, col + dc
+
+                # Check bounds
+                if not (0 <= new_row < self.height and 0 <= new_col < self.width):
+                    continue
+
+                neighbor = self.cells[new_row][new_col]
+
+                # Skip obstacles (pedestrians can't walk through them)
+                if neighbor.state == CAState.OBSTACLE:
+                    continue
+
+                # Calculate distance (1 unit for all moves in Moore neighborhood)
+                new_distance = current_distance + distance
+
+                # Update if we found a shorter path
+                if new_distance < neighbor.static_field:
+                    neighbor.static_field = new_distance
+
+                    # Only add to queue if not visited or if we found a better path
+                    if (
+                        new_row,
+                        new_col,
+                    ) not in visited or new_distance < neighbor.static_field:
+                        queue.append((new_row, new_col, new_distance))
+                        visited.add((new_row, new_col))
