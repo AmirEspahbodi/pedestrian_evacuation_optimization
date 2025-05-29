@@ -59,7 +59,9 @@ class Domain(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
-        print(f"Initializing Domain {self.id} with width={self.width}, height={self.height}, ")
+        print(
+            f"Initializing Domain {self.id} with width={self.width}, height={self.height}, "
+        )
         self._init_walls()
         self._initialize_cell_states()
         self._initialize_pedestrians()

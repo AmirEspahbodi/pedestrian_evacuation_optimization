@@ -454,9 +454,7 @@ def main(domain: Domain, window=None):
     alpha = SimulationConfig.simulator.cellular_automaton_parameters.diffusion
     delta = SimulationConfig.simulator.cellular_automaton_parameters.decay
 
-    exit_cells = frozenset(
-        domain.get_exit_cells()
-    )
+    exit_cells = frozenset(domain.get_exit_cells())
 
     npeds = check_N_pedestrians(box, npeds)
 

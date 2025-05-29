@@ -5,7 +5,6 @@ from .domain import Domain
 class Environment(BaseModel):
     domains: list[Domain] = []
 
-
     @classmethod
     def from_json_file(cls, file_path: str) -> "Environment":
         with open(file_path, "r") as f:
