@@ -2,16 +2,9 @@ from pydantic import BaseModel, ConfigDict
 from .domain import Domain
 
 
-class Gateway(BaseModel):
-    id: int
-    domain1: int
-    domain2: int
-    model_config = ConfigDict()
-
-
 class Environment(BaseModel):
-    domains: list[Domain]
-    gateways: list[Gateway]
+    domains: list[Domain] = []
+
 
     @classmethod
     def from_json_file(cls, file_path: str) -> "Environment":

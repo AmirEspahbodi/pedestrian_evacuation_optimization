@@ -32,6 +32,7 @@ class Pedestrian:
 
 
 class Domain(BaseModel):
+    id: int
     width: int
     height: int
     accesses: list[Access]
@@ -58,7 +59,7 @@ class Domain(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
-        print(f"Initializing Domain with width={self.width}, height={self.height}, ")
+        print(f"Initializing Domain {self.id} with width={self.width}, height={self.height}, ")
         self._init_walls()
         self._initialize_cell_states()
         self._initialize_pedestrians()
@@ -66,20 +67,20 @@ class Domain(BaseModel):
     def _get_perimeter_coordinates(self, perimeter):
         width = (
             perimeter
-            if perimeter < self.width
+            if perimeter <= self.width
             else self.width
-            if self.width < perimeter and perimeter < self.width + self.height
+            if self.width < perimeter and perimeter <= self.width + self.height
             else (self.width) - (perimeter - (self.width + self.height))
-            if self.width + self.height < perimeter < (2 * self.width + self.height)
+            if self.width + self.height < perimeter <= (2 * self.width + self.height)
             else 0
         )
         height = (
             0
-            if perimeter < self.width
+            if perimeter <= self.width
             else (perimeter - self.width)
-            if self.width < perimeter < self.width + self.height
+            if self.width < perimeter <= self.width + self.height
             else self.height
-            if self.width + self.height < perimeter < (2 * self.width + self.height)
+            if self.width + self.height < perimeter <= (2 * self.width + self.height)
             else (self.height) - (perimeter - (2 * self.width + self.height))
         )
         return height - 1, width - 1
@@ -89,14 +90,11 @@ class Domain(BaseModel):
         self,
     ):
         for access in self.accesses:
-            pa, wa = access.shape.pa, access.shape.wa  # Pα, Wα
+            pa, wa = access.pa, access.wa  # Pα, Wα
             for i in range(pa, pa + wa):
                 height, width = self._get_perimeter_coordinates(i)
                 self.walls[width][height] = 1
         for obstacle in self.obstacles:
-            print(
-                f"Obstacle at {obstacle.shape.topLeft.x}, {obstacle.shape.topLeft.y} with width={obstacle.shape.width} and height={obstacle.shape.height}"
-            )
             # Fill the grid with the obstacle state
             for y in range(
                 obstacle.shape.topLeft.y,

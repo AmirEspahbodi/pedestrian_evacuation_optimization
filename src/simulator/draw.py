@@ -1,5 +1,4 @@
 import sys
-from .environment import Environment
 from .domain import Domain, CAState
 
 

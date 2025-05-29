@@ -14,18 +14,18 @@ def main():
 
     # Create sample domain (replace with actual domain instance)
     environment = Environment.from_json_file(
-        "dataset/environments/environment-example-supermarket.json"
+        "dataset/environments/environments_supermarket.json"
     )
-    domain = environment.domains[0]
 
     # Create and show main window
-    window = DomainVisualizerWindow(domain)
+    window = DomainVisualizerWindow(environment.domains[0])
     window.show()
 
-    engine_main(domain=domain, window=window)
+    engine_main(domain=environment.domains[0], window=window)
+    print(f"len obstacles = {len(environment.domains[0].obstacles)} .")
 
     print("Simulation completed.")
-    print(f"pedestrian left in are {domain.get_left_pedestrians()}.")
+    print(f"pedestrian left in are {environment.domains[0].get_left_pedestrians()}.")
 
     sys.exit(app.exec())
 

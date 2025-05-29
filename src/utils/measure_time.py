@@ -7,9 +7,9 @@ def timing_decorator(original_function):
         result = original_function(*args, **kwargs)
         end_time = time.time()
         execution_time = end_time - start_time
-        print(
-            f"Function '{original_function.__name__}' executed in: {execution_time:.4f} seconds"
-        )
+        # print(
+        #     f"Function '{original_function.__name__}' executed in: {execution_time:.4f} seconds"
+        # )
         return result
 
     # Return the wrapper function
