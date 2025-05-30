@@ -15,7 +15,6 @@ def main():
         "dataset/environments/environments_supermarket.json"
     )
 
-
     # Create and show main window
     window = DomainVisualizerWindow(environment.domains[5])
     window.show()

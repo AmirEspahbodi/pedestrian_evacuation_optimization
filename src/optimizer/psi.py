@@ -55,7 +55,6 @@ def calculate_fitness(
     return fitness_value
 
 
-
 def psi_helper(
     num_runs: int, domain: Domain, emergency_accesses: list[tuple[int, int]]
 ):

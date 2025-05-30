@@ -11,6 +11,7 @@ from src.optimizer.cheetah import CheetahOptimizer
 from src.optimizer.greedy import GreedyOptimizer
 from src.optimizer.psi import psi
 
+
 class MainProcess:
     def __init__(self, show_process: bool = False):
         self.domains = Environment.from_json_file(
@@ -23,5 +24,5 @@ class MainProcess:
         # for domain in self.domains:
         #     resutl = CheetahOptimizer(domain).do()
         #     print(resutl)
-        
+
         print(psi(self.domains[0], OptimizerStrategy.EA, emergency_accesses=[1, 2]))
