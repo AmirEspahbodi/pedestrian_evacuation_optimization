@@ -65,7 +65,7 @@ def psi_helper(
         main_engine(domain)
         domain.calculate_peds_distance_to_nearest_exit()
         sum_fitness += calculate_fitness(domain)
-    domain.remove_emergency_accesses
+    domain.remove_emergency_accesses()
     return sum_fitness / num_runs
 
 

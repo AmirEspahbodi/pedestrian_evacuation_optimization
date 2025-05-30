@@ -21,8 +21,5 @@ class MainProcess:
 
     def run(self):
         random.shuffle(self.domains)
-        # for domain in self.domains:
-        #     resutl = CheetahOptimizer(domain).do()
-        #     print(resutl)
-
-        print(psi(self.domains[0], OptimizerStrategy.EA, emergency_accesses=[1, 2]))
+        
+        self.domains[0]
