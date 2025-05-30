@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field, field_validator
 
-from pathlib import Path
 from typing import List
-import json
 from functools import cached_property
 from .types import UpdateStrategy, Neighborhood
+from .config_reader import ConfigurationReader
 
 
 class CellularAutomatonParameters(BaseModel):
@@ -65,6 +64,7 @@ class Simulator(BaseModel):
 class EnvironmentConfig(BaseModel):
     """Root configuration model for simulation environment."""
 
+    omega: int
     num_simulations: int = Field(alias="numSimulations", gt=0)
     simulator: Simulator
     num_pedestrians: List[int] = Field(alias="numPedestrians", min_length=1)
@@ -73,34 +73,6 @@ class EnvironmentConfig(BaseModel):
         populate_by_name = True
 
 
-class ConfigurationReader:
-    """Handles reading and validation of environment configuration files."""
-
-    def __init__(self, file_path: str | Path):
-        self.file_path = Path(file_path)
-        self._config = None
-
-    @property
-    def config(self) -> EnvironmentConfig:
-        """Lazy loading of configuration."""
-        if self._config is None:
-            self._config = self.load_config()
-        return self._config
-
-    def load_config(self) -> EnvironmentConfig:
-        """Load and validate configuration from JSON file."""
-        if not self.file_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {self.file_path}")
-
-        try:
-            with open(self.file_path, "r") as f:
-                data = json.load(f)
-            return EnvironmentConfig(**data)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in configuration file: {e}")
-        except Exception as e:
-            raise ValueError(f"Configuration validation error: {e}")
-
-
-_reader = ConfigurationReader("dataset/simulation.json")
-SimulationConfig = _reader.config
+SimulationConfig = ConfigurationReader[EnvironmentConfig](
+    "dataset/simulation.json", EnvironmentConfig
+).load_config()

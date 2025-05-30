@@ -87,6 +87,14 @@ class Domain(BaseModel):
             self._storage_cells[neighbor[1]][
                 neighbor[0]
             ].state = CAState.ACCESS_OCCUPIED
+        if (
+            self._storage_cells[neighbor[1]][neighbor[0]].state
+            == CAState.EMERGENCY_ACCESS
+        ):
+            self._storage_cells[current_ped.y][current_ped.x].state = CAState.EMPTY
+            self._storage_cells[neighbor[1]][
+                neighbor[0]
+            ].state = CAState.EMERGENCY_ACCESS_OCCUPIED
 
         current_ped.x = neighbor[0]
         current_ped.y = neighbor[1]
@@ -97,42 +105,32 @@ class Domain(BaseModel):
     def self_is_access(self, cell):
         x, y = cell
         if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
-            if self.walls[cell[0], cell[1]] == 1:
+            if self.walls[cell[0], cell[1]] == 1 or self.walls[cell[0], cell[1]] == 2:
                 return True
         return False
-
-    @field_validator("peds", "walls", mode="before")
-    @classmethod
-    def convert_to_numpy_array_if_needed(cls, value: Any) -> Any:
-        if not isinstance(value, np.ndarray):
-            try:
-                # Attempt to convert list of lists or similar to a NumPy array
-                converted_value = np.array(value)
-                return converted_value
-            except Exception as e:
-                raise ValueError(f"Could not convert value to NumPy array: {e}")
-        return value
-
-    @field_validator("peds", "walls", mode="after")
-    @classmethod
-    def check_is_2d(cls, value: NDArray, info: ValidationInfo) -> NDArray:
-        if value.ndim != 2:
-            raise ValueError(
-                f"Field '{info.field_name}' must be a 2D array, got {value.ndim} dimensions."
-            )
-        return value
 
     def _get_state(self, y, x) -> CAState:
         if self.walls[x][y] == -1:
             return CAState.OBSTACLE
         elif self.walls[x][y] == 1:
-            if self.peds[x][y] == 1:
-                return CAState.OCCUPIED
-            else:
-                if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
+            if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
+                if self.peds[x, y] == 1:
+                    return CAState.ACCESS_OCCUPIED
+                else:
                     return CAState.ACCESS
+            else:
+                if self.peds[x, y] == 1:
+                    return CAState.OCCUPIED
                 else:
                     return CAState.EMPTY
+        elif self.walls[x][y] == 2:
+            if x == 0 or x == self.width - 1 or y == 0 or y == self.height - 1:
+                if self.peds[x, y] == 1:
+                    return CAState.EMERGENCY_ACCESS_OCCUPIED
+                else:
+                    return CAState.EMERGENCY_ACCESS
+            else:
+                raise RuntimeError("incorrect emergency emaccess! ")
 
     def get_left_pedestrians_count(self) -> int:
         pedestrians = 0
@@ -145,14 +143,14 @@ class Domain(BaseModel):
     def get_exit_cells(self) -> List[tuple[int, int]]:
         exit_cells = []
         for y in range(0, self.height):
-            if self.walls[0][y] == 1:
+            if self.walls[0][y] == 1 or self.walls[0][y] == 2:
                 exit_cells.append((0, y))
-            if self.walls[-1][y] == 1:
+            if self.walls[-1][y] == 1 or self.walls[-1][y] == 2:
                 exit_cells.append((self.width - 1, y))
         for x in range(0, self.width):
-            if self.walls[x][0] == 1:
+            if self.walls[x][0] == 1 or self.walls[x][0] == 2:
                 exit_cells.append((x, 0))
-            if self.walls[x][-1] == 1:
+            if self.walls[x][-1] == 1 or self.walls[x][-1] == 2:
                 exit_cells.append((x, self.height - 1))
         return exit_cells
 
@@ -267,6 +265,21 @@ class Domain(BaseModel):
                 Pedestrian(x=x, y=y, id=np.sum(self.peds), t_star=0)
             )
 
+    def reset_pedestrians(self):
+        del self.peds
+        del self._pedestrians
+        for y in range(self.height):
+            for x in range(self.width):
+                if self._storage_cells[y][x].state == CAState.OCCUPIED:
+                    self._storage_cells[y][x].state == CAState.EMPTY
+                elif self._storage_cells[y][x].state == CAState.ACCESS_OCCUPIED:
+                    self._storage_cells[y][x].state == CAState.ACCESS
+                elif (
+                    self._storage_cells[y][x].state == CAState.EMERGENCY_ACCESS_OCCUPIED
+                ):
+                    self._storage_cells[y][x].state == CAState.EMERGENCY_ACCESS
+        self._initialize_pedestrians()
+
     def _init_obstacles(self):
         return np.ones((self.width, self.height), int)
 
@@ -281,7 +294,7 @@ class Domain(BaseModel):
         OBST[0, :] = OBST[-1, :] = OBST[:, -1] = OBST[:, 0] = -1
         self.walls = OBST
 
-    def calculate_nearest_exit_distances(self):
+    def _calculate_nearest_exit_distances(self):
         """
         Calculate the nearest exit distance for each non-obstacle cell using multi-source BFS.
         This algorithm efficiently finds the shortest path from each cell to any access point.
@@ -358,3 +371,22 @@ class Domain(BaseModel):
                     ) not in visited or new_distance < neighbor.static_field:
                         queue.append((new_row, new_col, new_distance))
                         visited.add((new_row, new_col))
+
+    def calculate_peds_distance_to_nearest_exit(self):
+        self._calculate_nearest_exit_distances()
+        for ped in self._pedestrians:
+            ped.d_star = self._storage_cells[ped.y][ped.x].static_field
+
+    def get_pedestrians(self):
+        return self._pedestrians
+
+    def add_emergency_accesses(self, emergency_accesses: list[tuple[int, int]]):
+        for access in emergency_accesses:
+            pa, wa = access  # Pα, Wα
+            for i in range(pa, pa + wa):
+                height, width = self._get_perimeter_coordinates(i)
+                self.walls[width][height] = 2
+                self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
+
+    def remove_emergency_accesses(self):
+        pass

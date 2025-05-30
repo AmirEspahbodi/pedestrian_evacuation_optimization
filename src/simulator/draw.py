@@ -40,10 +40,13 @@ class GridWidget(QWidget):
 
         # Color scheme with modern, accessible colors
         self.colors = {
-            CAState.EMPTY: QColor(255, 255, 255),  # White
-            CAState.OBSTACLE: QColor(33, 33, 33),  # Near black
-            CAState.OCCUPIED: QColor(41, 128, 185),  # Professional blue
-            CAState.ACCESS: QColor(39, 174, 96),  # Vibrant green
+            CAState.EMPTY: QColor(255, 255, 255),
+            CAState.OBSTACLE: QColor(33, 33, 33),
+            CAState.OCCUPIED: QColor(41, 128, 185),
+            CAState.ACCESS: QColor(39, 174, 96),
+            CAState.ACCESS_OCCUPIED: QColor(128, 0, 128),
+            CAState.EMERGENCY_ACCESS: QColor(238, 75, 43),
+            CAState.EMERGENCY_ACCESS_OCCUPIED: QColor(128, 0, 128),
         }
 
         # Additional UI colors

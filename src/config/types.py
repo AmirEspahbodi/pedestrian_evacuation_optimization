@@ -22,3 +22,9 @@ class Neighborhood(StrEnum):
 
     def __str__(self) -> str:
         return self.value
+
+
+class OptimizerStrategy(StrEnum):
+    EA = "ea"
+    GREEDY = "greedy"
+    IEA = "iea"

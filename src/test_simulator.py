@@ -2,12 +2,9 @@ import sys
 from .simulator.environment import Environment
 from .simulator.draw import DomainVisualizerWindow
 from .simulator.simulation_engine import main as engine_main
-from .optimizer.fitness import fitness
-import time
+from .optimizer.fitness import calculate_fitness
 
-# from .simulator.pedestrian_evacuation.pedestrian_movement_process import PedestrianMovementModelProcess
 from PyQt6.QtWidgets import QApplication
-import numpy as np
 
 
 def main():
@@ -19,17 +16,17 @@ def main():
         "dataset/environments/environments_supermarket.json"
     )
 
+    environment.domains[5].add_emergency_accesses([(1, 2), (10, 3)])
+
     # Create and show main window
     window = DomainVisualizerWindow(environment.domains[5])
     window.show()
 
     engine_main(domain=environment.domains[5], window=window)
     environment.domains[5].is_simulation_finished = True
-    environment.domains[5].calculate_nearest_exit_distances()
-
+    environment.domains[5].calculate_peds_distance_to_nearest_exit()
     window.updateGrid()
-
-    fitness(domain=environment.domains[5])
+    print(calculate_fitness(domain=environment.domains[5]))
 
     print("Simulation completed.")
     print(
