@@ -2,8 +2,9 @@ import sys
 from .simulator.environment import Environment
 from .simulator.draw import DomainVisualizerWindow
 from .simulator.simulation_engine import main as engine_main
-from src.optimizer.psi import psi
+from src.config import SimulationConfig
 from PyQt6.QtWidgets import QApplication
+from src.optimizer.greedy import greedy_algorithm
 
 
 def main():
@@ -15,15 +16,17 @@ def main():
         "dataset/environments/environments_supermarket.json"
     )
 
+    emergency_accesses, fitness_value = greedy_algorithm(domain=environment.domains[5])
+
+    environment.domains[5].add_emergency_accesses(emergency_accesses)
     # Create and show main window
     window = DomainVisualizerWindow(environment.domains[5])
     window.show()
 
-    engine_main(domain=environment.domains[5], window=window)
     environment.domains[5].is_simulation_finished = True
     environment.domains[5].calculate_peds_distance_to_nearest_exit()
     window.updateGrid()
-    print(psi(domain=environment.domains[5]), (1, 2), (4, 2))
+    engine_main(domain=environment.domains[5], window=window)
 
     print("Simulation completed.")
     print(

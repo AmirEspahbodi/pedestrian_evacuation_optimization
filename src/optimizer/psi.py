@@ -16,10 +16,8 @@ from src.config import SimulationConfig
 def calculate_fitness(
     domain: Domain,
 ) -> float:
-    print("- - - - -" * 10)
     pedestrians = domain.get_pedestrians()
     num_total_pedestrians = len(pedestrians)
-    print(num_total_pedestrians)
     evacuees: List[Pedestrian] = []
     non_evacuees: List[Pedestrian] = []
 
@@ -28,8 +26,6 @@ def calculate_fitness(
             evacuees.append(p)
         else:
             non_evacuees.append(p)
-    print(len(evacuees))
-    print(len(non_evacuees))
     num_non_evacuees = len(non_evacuees)
     fitness_value = float(num_non_evacuees)
 
@@ -66,6 +62,7 @@ def psi_helper(
         domain.calculate_peds_distance_to_nearest_exit()
         sum_fitness += calculate_fitness(domain)
     domain.remove_emergency_accesses()
+    print(f"     sum_fitness={sum_fitness}, num_runs={num_runs}")
     return sum_fitness / num_runs
 
 

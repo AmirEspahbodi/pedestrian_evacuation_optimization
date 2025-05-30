@@ -349,12 +349,15 @@ def print_logs(N_pedestrians, width, height, t, dt, nruns, Dt):
     """
     print some infos to the screen
     """
-    print("Simulation of %d pedestrians" % N_pedestrians)
-    print("Simulation space (%.2f x %.2f) m^2" % (width, height))
-    print("SFF:  %.2f | DFF: %.2f" % (kappaS, kappaD))
-    print("Mean Evacuation time: %.2f s, runs: %d" % (t * dt / nruns, nruns))
-    print("Total Run time: %.2f s" % Dt)
-    print("Factor: x%.2f" % (dt * t / Dt))
+    # print(' << --------------------------------------------------- ')
+    # print("Simulation of %d pedestrians" % N_pedestrians)
+    # print("Simulation space (%.2f x %.2f) m^2" % (width, height))
+    # print("SFF:  %.2f | DFF: %.2f" % (kappaS, kappaD))
+    # print("Mean Evacuation time: %.2f s, runs: %d" % (t * dt / nruns, nruns))
+    # print("Total Run time: %.2f s" % Dt)
+    # print("Factor: x%.2f" % (dt * t / Dt))
+    # print('  --------------------------------------------------- >> ')
+    pass
 
 
 def setup_dir(dir, clean):
@@ -366,10 +369,10 @@ def setup_dir(dir, clean):
 
 def simulate(args, domain, window):
     n, npeds, box, sff, shuffle, reverse, drawP, giveD = args
-    print(
-        "init %d agents in box=[%d, %d, %d, %d]"
-        % (npeds, box[0], box[1], box[2], box[3])
-    )
+    # print(
+    #     "init %d agents in box=[%d, %d, %d, %d]"
+    #     % (npeds, box[0], box[1], box[2], box[3])
+    # )
 
     dff = init_DFF()
 
@@ -377,11 +380,11 @@ def simulate(args, domain, window):
     for t in steps:  # simulation loop
         if window:
             window.updateGrid()
-            time.sleep(0.01)
-        print(
-            "\tn: %3d ----  t: %3d |  N: %3d"
-            % (n, t, int(domain.get_left_pedestrians_count()))
-        )
+            time.sleep(0.1)
+        # print(
+        #     "\tn: %3d ----  t: %3d |  N: %3d"
+        #     % (n, t, int(domain.get_left_pedestrians_count()))
+        # )
         if drawP:
             plot_peds(domain, walls, t)
 
@@ -427,7 +430,7 @@ def main(domain: Domain, window=None):
         SimulationConfig.num_pedestrians[0], SimulationConfig.num_pedestrians[1]
     )
     moore = (
-        SimulationConfig.simulator.cellular_automaton_parameters.neighborhood == "moore"
+        SimulationConfig.simulator.cellular_automaton_parameters.neighborhood == "Moore"
     )
     nruns = SimulationConfig.simulator.cellular_automaton_parameters.num_runs
 
@@ -450,9 +453,9 @@ def main(domain: Domain, window=None):
     # TODO check if width and hight are multiples of cellSize
     dim_y = height  # number of columns, add ghost cells
     dim_x = width  # number of rows, add ghost cells
-    print(" dim_x: ", dim_x, " dim_y: ", dim_y)
+    # print(" dim_x: ", dim_x, " dim_y: ", dim_y)
     if box == DEFAULT_BOX:
-        print("box == room")
+        # print("box == room")
         box = [1, dim_x - 2, 1, dim_y - 2]
 
     alpha = SimulationConfig.simulator.cellular_automaton_parameters.diffusion
@@ -482,7 +485,7 @@ def main(domain: Domain, window=None):
     old_dffs = []
 
     for n in range(nruns):
-        print("n= ", n, " nruns=", nruns)
+        # print("n= ", n, " nruns=", nruns)
         if drawD_avg or drawD:
             t, dffs = simulate(
                 (n, npeds, box, sff, shuffle, reverse, drawP, drawD_avg or drawD),
@@ -497,14 +500,14 @@ def main(domain: Domain, window=None):
                 window,
             )
         tsim += t
-        print("time ", tsim)
+        # print("time ", tsim)
         times.append(t * dt)
-    if moore:
-        print("save moore.npy")
-        np.save("moore.npy", times)
-    else:
-        print("save neumann.npy")
-        np.save("neumann.npy", times)
+    # if moore:
+    #     # print("save moore.npy")
+    #     np.save("moore.npy", times)
+    # else:
+    #     # print("save neumann.npy")
+    #     np.save("neumann.npy", times)
 
     t2 = time.time()
     print_logs(npeds, width, height, tsim, dt, nruns, t2 - t1)

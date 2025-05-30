@@ -256,9 +256,6 @@ class Domain(BaseModel):
             SimulationConfig.num_pedestrians[1],
         )
         selected_pedestrians = empty_cells[:num_pedestrians]
-        print(
-            f"create {num_pedestrians} pedestrians at {len(selected_pedestrians)} selected positions"
-        )
         for y, x in selected_pedestrians:
             self.peds[x][y] = 1  # Mark the cell as occupied
             self._pedestrians.append(
@@ -382,11 +379,22 @@ class Domain(BaseModel):
 
     def add_emergency_accesses(self, emergency_accesses: list[tuple[int, int]]):
         for access in emergency_accesses:
-            pa, wa = access  # Pα, Wα
+            try:
+                pa, wa = access
+            except BaseException:
+                print(emergency_accesses)
+
             for i in range(pa, pa + wa):
                 height, width = self._get_perimeter_coordinates(i)
-                self.walls[width][height] = 2
-                self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
+                if self.walls[width][height] == -1:
+                    self.walls[width][height] = 2
+                    self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
 
     def remove_emergency_accesses(self):
-        pass
+        self.walls[0, :] = self.walls[-1, :] = self.walls[:, -1] = self.walls[:, 0] = -1
+        for access in self.accesses:
+            pa, wa = access.pa, access.wa  # Pα, Wα
+            for i in range(pa, pa + wa):
+                height, width = self._get_perimeter_coordinates(i)
+                self.walls[width][height] = 1
+                self._storage_cells[height][width].state = CAState.ACCESS

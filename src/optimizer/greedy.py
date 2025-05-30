@@ -1,9 +1,51 @@
+import random
+from typing import List, Tuple
 from src.simulator.domain import Domain
+from src.config import SimulationConfig, OptimizerStrategy
+from .common import FitnessEvaluator, Individual
+from .psi import psi as psi_function
 
 
-class GreedyOptimizer:
-    def __init__(self, domain: Domain):
-        self.domain = domain
+def greedy_algorithm(
+    domain: Domain,
+) -> Tuple[List[float], float]:
+    psi_evaluator: FitnessEvaluator = FitnessEvaluator(domain, OptimizerStrategy.GREEDY)
 
-    def do(self):
-        raise NotImplementedError("main finction to run algorithm, not iemented")
+    omega_exit_width: float = SimulationConfig.omega
+    perimeter_length = 2 * (domain.width + domain.height)
+    k_exits = SimulationConfig.num_emergency_exits
+
+    E_current_solution: List[float] = []
+    current_fitness = float("inf")
+
+    eta = perimeter_length // omega_exit_width + 1
+
+    print(f"k_exits = {k_exits}")
+    print(f"eta = {eta}")
+    for i in range(k_exits):
+        print(f"looking for {i + 1}th emergency exit place")
+        best_psi_for_this_exit = float("inf")
+        chosen_exit_for_this_iteration = -1
+        p_start_scan = random.randint(0, perimeter_length)
+
+        candidate_location = p_start_scan
+
+        for j in range(eta):
+            temp_accesses = E_current_solution + [candidate_location]
+            current_eval_psi = psi_evaluator.evaluate(temp_accesses)
+            print(
+                f"     j={j}, temp_accesses={temp_accesses}, current_eval_psi={current_eval_psi}\n"
+            )
+
+            if current_eval_psi < best_psi_for_this_exit:
+                best_psi_for_this_exit = current_eval_psi
+                chosen_exit_for_this_iteration = candidate_location
+
+            candidate_location += omega_exit_width
+            if candidate_location >= perimeter_length:
+                candidate_location -= perimeter_length
+
+        E_current_solution.append(chosen_exit_for_this_iteration)
+        current_fitness = best_psi_for_this_exit
+
+    return E_current_solution, current_fitness

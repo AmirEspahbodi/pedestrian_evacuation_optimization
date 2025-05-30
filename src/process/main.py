@@ -8,7 +8,7 @@ from src.simulator.simulation_engine import main as main_engine
 from src.optimizer.ea import EAOptimizer
 from src.optimizer.iea import IEAOptimizer
 from src.optimizer.cheetah import CheetahOptimizer
-from src.optimizer.greedy import GreedyOptimizer
+from src.optimizer.greedy import greedy_algorithm
 from src.optimizer.psi import psi
 
 
@@ -20,6 +20,6 @@ class MainProcess:
         self.show_process = show_process
 
     def run(self):
-        random.shuffle(self.domains)
-        
-        self.domains[0]
+        emergency_accesses, fitness_value = greedy_algorithm(
+            random.choice(self.domains)
+        )
