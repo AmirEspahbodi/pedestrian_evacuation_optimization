@@ -65,6 +65,7 @@ class EnvironmentConfig(BaseModel):
     """Root configuration model for simulation environment."""
 
     omega: int
+    num_emergency_exits: int = Field(alias="numEmergencyExits", gt=0)
     num_simulations: int = Field(alias="numSimulations", gt=0)
     simulator: Simulator
     num_pedestrians: List[int] = Field(alias="numPedestrians", min_length=1)
