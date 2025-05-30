@@ -6,7 +6,10 @@ from src.simulator.environment import Environment
 from src.simulator.domain import Access, Domain
 from src.config import SimulationConfig
 from src.simulator.simulation_engine import main as main_engine
-
+from src.optimizer.ea import EAOptimizer
+from src.optimizer.iea import IEAOptimizer
+from src.optimizer.cheetah import CheetahOptimizer
+from src.optimizer.greedy import GreedyOptimizer
 
 class MainProcess:
     def __init__(self, show_process: bool = False):
@@ -15,8 +18,8 @@ class MainProcess:
         ).domains
         self.show_process = show_process
 
-    def do(self, domain: Domain, optimizer: Callable[..., Any]):
-        pass
-
     def run(self):
-        domain = random.choice(self.domains)
+        random.shuffle(self.domains)
+        for domain in self.domains:
+            resutl = CheetahOptimizer(domain).do()
+            print(resutl)
