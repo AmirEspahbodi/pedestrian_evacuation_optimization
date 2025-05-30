@@ -267,7 +267,7 @@ class Domain(BaseModel):
 
     def reset_pedestrians(self):
         del self.peds
-        del self._pedestrians
+        self._pedestrians.clear()
         for y in range(self.height):
             for x in range(self.width):
                 if self._storage_cells[y][x].state == CAState.OCCUPIED:

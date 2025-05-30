@@ -2,8 +2,7 @@ import sys
 from .simulator.environment import Environment
 from .simulator.draw import DomainVisualizerWindow
 from .simulator.simulation_engine import main as engine_main
-from .optimizer.fitness import calculate_fitness
-
+from src.optimizer.psi import psi
 from PyQt6.QtWidgets import QApplication
 
 
@@ -16,7 +15,6 @@ def main():
         "dataset/environments/environments_supermarket.json"
     )
 
-    environment.domains[5].add_emergency_accesses([(1, 2), (10, 3)])
 
     # Create and show main window
     window = DomainVisualizerWindow(environment.domains[5])
@@ -26,7 +24,7 @@ def main():
     environment.domains[5].is_simulation_finished = True
     environment.domains[5].calculate_peds_distance_to_nearest_exit()
     window.updateGrid()
-    print(calculate_fitness(domain=environment.domains[5]))
+    print(psi(domain=environment.domains[5]), (1, 2), (4, 2))
 
     print("Simulation completed.")
     print(

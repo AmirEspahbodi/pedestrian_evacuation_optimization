@@ -1,15 +1,15 @@
 import random
 from typing import Callable, Any
 
-from src.optimizer import calculate_fitness
 from src.simulator.environment import Environment
 from src.simulator.domain import Access, Domain
-from src.config import SimulationConfig
+from src.config import SimulationConfig, OptimizerStrategy
 from src.simulator.simulation_engine import main as main_engine
 from src.optimizer.ea import EAOptimizer
 from src.optimizer.iea import IEAOptimizer
 from src.optimizer.cheetah import CheetahOptimizer
 from src.optimizer.greedy import GreedyOptimizer
+from src.optimizer.psi import psi
 
 class MainProcess:
     def __init__(self, show_process: bool = False):
@@ -20,6 +20,8 @@ class MainProcess:
 
     def run(self):
         random.shuffle(self.domains)
-        for domain in self.domains:
-            resutl = CheetahOptimizer(domain).do()
-            print(resutl)
+        # for domain in self.domains:
+        #     resutl = CheetahOptimizer(domain).do()
+        #     print(resutl)
+        
+        print(psi(self.domains[0], OptimizerStrategy.EA, emergency_accesses=[1, 2]))
