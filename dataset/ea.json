@@ -1,12 +1,14 @@
 {
-    "numruns" : 20,
+    "numruns" : 3,
     "seed" : 1,
     "islands" : [
         {
             "numislands" : 1,
             "popsize" : 100,
             "offspring" : 99,
-            "maxevals" : 20000,
+            "maxevals" : 2000,
+            "recombination_prob": 0.9,
+            "mutation_gamma": 0.05,
             "initialization" : {
                 "name": "randomvector"
             },

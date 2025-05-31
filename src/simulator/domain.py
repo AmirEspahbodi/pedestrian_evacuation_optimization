@@ -381,14 +381,13 @@ class Domain(BaseModel):
         for access in emergency_accesses:
             try:
                 pa, wa = access
+                for i in range(pa, pa + wa):
+                    height, width = self._get_perimeter_coordinates(i)
+                    if self.walls[width][height] == -1:
+                        self.walls[width][height] = 2
+                        self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
             except BaseException:
                 print(emergency_accesses)
-
-            for i in range(pa, pa + wa):
-                height, width = self._get_perimeter_coordinates(i)
-                if self.walls[width][height] == -1:
-                    self.walls[width][height] = 2
-                    self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
 
     def remove_emergency_accesses(self):
         self.walls[0, :] = self.walls[-1, :] = self.walls[:, -1] = self.walls[:, 0] = -1

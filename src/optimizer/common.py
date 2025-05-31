@@ -14,6 +14,7 @@ class FitnessEvaluator:
         if not emergency_accesses:
             return float("inf")
         self.evaluations += 1
+        print(f"     evaluation cuont={self.evaluations}")
         return psi_function(self.domain, self.optimizer_strategy, emergency_accesses)
 
     def get_evaluation_count(self) -> int:
