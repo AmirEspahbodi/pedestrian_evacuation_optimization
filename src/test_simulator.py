@@ -6,6 +6,7 @@ from src.config import SimulationConfig
 from PyQt6.QtWidgets import QApplication
 from src.optimizer.greedy import greedy_algorithm
 from src.optimizer.ea import evolutionary_algorithm
+from src.optimizer.iea import island_evolutionary_algorithm
 
 def main():
     """Main entry point for the application."""
@@ -16,7 +17,9 @@ def main():
         "dataset/environments/environments_supermarket.json"
     )
 
-    emergency_accesses, fitness_value, evals = evolutionary_algorithm(domain=environment.domains[5])
+    emergency_accesses, fitness_value, evals = evolutionary_algorithm(
+        domain=environment.domains[5]
+    )
 
     environment.domains[5].add_emergency_accesses(emergency_accesses)
     # Create and show main window

@@ -385,7 +385,9 @@ class Domain(BaseModel):
                     height, width = self._get_perimeter_coordinates(i)
                     if self.walls[width][height] == -1:
                         self.walls[width][height] = 2
-                        self._storage_cells[height][width].state = CAState.EMERGENCY_ACCESS
+                        self._storage_cells[height][
+                            width
+                        ].state = CAState.EMERGENCY_ACCESS
             except BaseException:
                 print(emergency_accesses)
 

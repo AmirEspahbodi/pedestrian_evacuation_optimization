@@ -38,6 +38,9 @@ class IslandConfig(BaseModel):
     popsize: int
     offspring: int
     maxevals: int
+    recombination_prob: float
+    mutation_gamma: float
+    migration_frequency_generations: int
     initialization: InitializationConfig
     selection: OperatorConfig
     variation: List[VariationOperatorConfig]
