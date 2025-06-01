@@ -22,10 +22,12 @@ class MainProcess:
         emergency_accesses, fitness_value, evals, history = island_evolutionary_algorithm(
             random_domain
         )
+        print(fitness_value)
+        print(emergency_accesses)
         print(history)
         with open("hustory.txt", "w") as fp:
             fp.write(str(history))
-        with open("emergency_accesses.txt") as fp:
+        with open("emergency_accesses.txt",  "w") as fp:
             fp.write(f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}")
             
         print("optimizing completed!")
