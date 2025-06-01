@@ -23,5 +23,7 @@ class MainProcess:
             random_domain
         )
         print(history)
+        with open("hustory.txt", "w") as fp:
+            fp.write(history)
         print("optimizing completed!")
         print(emergency_accesses, fitness_value, evals)
