@@ -1,4 +1,5 @@
 import random
+import math
 import numpy as np
 from typing import List, Tuple, Set
 from src.simulator.domain import Domain
@@ -96,7 +97,7 @@ def evolutionary_algorithm(
 
         next_population: List[Individual] = []
 
-        for _ in range(population_size // 2):
+        for _ in range(math.ceil(population_size / 2)):
             if psi_evaluator.get_evaluation_count() >= max_evals:
                 break
 

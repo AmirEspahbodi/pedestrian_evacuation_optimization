@@ -1,4 +1,5 @@
 import random
+import math
 from typing import List, Tuple
 from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy, IEAConfig
@@ -77,7 +78,7 @@ def island_evolutionary_algorithm(
 
             next_island_pop_segment: List[Individual] = []
             for _ in range(
-                island_population_size // 2
+                math.ceil(island_population_size / 2)
             ):  
                 if psi_evaluator.get_evaluation_count() >= max_evals:
                     break
@@ -114,7 +115,7 @@ def island_evolutionary_algorithm(
                     offspring1.fitness = float("inf")
                 next_island_pop_segment.append(offspring1)
 
-                if len(next_island_pop_segment) <= island_population_size:
+                if len(next_island_pop_segment) < island_population_size:
                     offspring2 = Individual(offspring2_genes)
                     if psi_evaluator.get_evaluation_count() < max_evals:
                         offspring2.fitness = psi_evaluator.evaluate(offspring2.genes)
