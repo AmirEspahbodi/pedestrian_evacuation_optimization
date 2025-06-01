@@ -9,7 +9,7 @@ import os
 import logging
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from src.config import SimulationConfig
 from .domain import Domain
@@ -62,122 +62,6 @@ def check_N_pedestrians(_box, N_pedestrians):
     return N_pedestrians
 
 
-def plot_sff2(SFF, walls, i):
-    """
-    plots a numbered image. Useful for making movies
-    """
-    print("plot_sff: %.6d" % i)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.cla()
-    plt.set_cmap("jet")
-    cmap = plt.get_cmap()
-    cmap.set_bad(color="k", alpha=0.8)
-    vect = SFF * walls
-    vect[vect < 0] = np.inf
-    #    print (vect)
-    max_value = np.max(SFF)
-    min_value = np.min(SFF)
-    plt.imshow(
-        vect,
-        cmap=cmap,
-        interpolation="nearest",
-        vmin=min_value,
-        vmax=max_value,
-        extent=[0, dim_y, 0, dim_x],
-    )  # lanczos nearest
-    plt.colorbar()
-    #   print(i)
-    plt.title("%.6d" % i)
-    figure_name = os.path.join("sff", "%.6d.png" % i)
-    plt.savefig(figure_name)
-    plt.close()
-
-
-def plot_sff(SFF, walls):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.cla()
-    plt.set_cmap("jet")
-    cmap = plt.get_cmap()
-    cmap.set_bad(color="k", alpha=0.8)
-    vect = SFF.copy()
-    vect[walls < 0] = np.inf
-    max_value = np.max(SFF)
-    min_value = np.min(SFF)
-    plt.imshow(
-        vect,
-        cmap=cmap,
-        interpolation="nearest",
-        vmin=min_value,
-        vmax=max_value,
-        extent=[0, dim_y, 0, dim_x],
-    )  # lanczos nearest
-    plt.colorbar()
-    figure_name = os.path.join("sff", "SFF.png")
-    plt.savefig(figure_name, dpi=600)
-    plt.close()
-
-
-def plot_dff(dff, walls, name="DFF", max_value=None, title=""):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.cla()
-    plt.set_cmap("jet")
-    cmap = plt.get_cmap()
-    cmap.set_bad(color="k", alpha=0.8)
-    vect = dff.copy()
-    vect[walls < 0] = np.inf
-    im = ax.imshow(
-        vect,
-        cmap=cmap,
-        interpolation="nearest",
-        vmin=0,
-        vmax=max_value,
-        extent=[0, dim_y, 0, dim_x],
-    )  # lanczos nearest
-    plt.colorbar(im, format="%.1f")
-    # cbar = plt.colorbar()
-    if title:
-        plt.title(title)
-
-    figure_name = os.path.join("dff", name + ".png")
-    plt.savefig(figure_name, dpi=600)
-    plt.close()
-    logging.info("plot dff. figure: {}.png".format(name))
-
-
-def plot_peds(domain, walls, i):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    ax.cla()
-    cmap = plt.get_cmap("gray")
-    cmap.set_bad(color="b", alpha=0.8)
-    N = domain.get_left_pedestrians_count()
-    # print N, type(N)
-    # print domain.peds+walls
-    # ax.axes.autoscale(False)
-    grid_x = np.arange(1, dim_x - 1, cellSize)
-    grid_y = np.arange(1, dim_y - 1, cellSize)
-
-    ax.imshow(
-        domain.peds + walls, cmap=cmap, interpolation="nearest", vmin=-1, vmax=2
-    )  # 1-domain.peds because I want the domain.peds to be black
-    plt.grid(True, color="k", alpha=0.3)
-    plt.yticks(np.arange(1.5, domain.peds.shape[0], 1))
-    plt.xticks(np.arange(1.5, domain.peds.shape[1], 1))
-    plt.setp(ax.get_xticklabels(), visible=False)
-    plt.setp(ax.get_yticklabels(), visible=False)
-    ax.tick_params(axis="both", which="both", length=0)
-
-    S = "t: %3.3d  |  N: %3.3d " % (i, N)
-    plt.title("%8s" % S)
-    figure_name = os.path.join("domain.peds", "domain.peds%.6d.png" % i)
-    plt.savefig(figure_name)
-    plt.close()
-
-
 def init_DFF():
     """ """
     return np.zeros((dim_x, dim_y))
@@ -210,17 +94,12 @@ def init_SFF(_exit_cells, _dim_x, _dim_y, drawS):
     SFF[:] = np.sqrt(_dim_x**2 + _dim_y**2)
 
     make_videos = 0
-    if make_videos and drawS:
-        plot_sff2(SFF, walls, 1)
 
     cells_initialised = []
     for e in _exit_cells:
         cells_initialised.append(e)
         SFF[e] = 0
 
-    if make_videos and drawS:
-        plot_sff2(SFF, walls, 2)
-        i = 3
     while cells_initialised:
         cell = cells_initialised.pop(0)
         neighbor_cells = get_neighbors(cell)
@@ -231,9 +110,6 @@ def init_SFF(_exit_cells, _dim_x, _dim_y, drawS):
                 cells_initialised.append(neighbor)
                 # print(SFF)
         # print(cells_initialised)
-        if make_videos and drawS:
-            plot_sff2(SFF, walls, i)
-            i += 1
 
     return SFF
 
@@ -385,8 +261,6 @@ def simulate(args, domain, window):
         #     "\tn: %3d ----  t: %3d |  N: %3d"
         #     % (n, t, int(domain.get_left_pedestrians_count()))
         # )
-        if drawP:
-            plot_peds(domain, walls, t)
 
         domain.peds, dff_diff = seq_update_cells(
             domain, sff, dff, kappaD, kappaS, shuffle, reverse
@@ -469,9 +343,6 @@ def main(domain: Domain, window=None):
 
     sff = init_SFF(exit_cells, dim_x, dim_y, drawS)
 
-    if drawS:
-        setup_dir("sff", clean_dirs)
-        plot_sff(sff, walls)
 
     t1 = time.time()
     tsim = 0
@@ -527,14 +398,12 @@ def main(domain: Domain, window=None):
                 kappaS,
                 kappaD,
             )
-        plot_dff(sum(x[1] for x in old_dffs) / tsim, walls, title)
     # title=r"$t = {:.2f}$ s, N={}, #runs = {}, $\kappa_S={}\;, \kappa_D={}$".format(sum(times), npeds, nruns, kappaS, kappaD)
     if drawD:
         print("plotting DFFs...")
         max_dff = max(field.max() for _, field in old_dffs)
         for tm, dff in old_dffs:
             print("t: %3.4d" % tm)
-            plot_dff(dff, walls, "DFF-%3.4d" % tm, max_dff, "t: %3.4d" % tm)
 
     return times
 

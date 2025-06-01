@@ -68,25 +68,31 @@ def evolutionary_algorithm(
     recombination_prob: float = EAConfig.islands[0].recombination_prob
     mutation_gamma: float = EAConfig.islands[0].mutation_gamma
     max_evals: int = EAConfig.islands[0].maxevals
-
+    history: dict[int,list[float]] = {}
+    
+    generation = 0
+    print(f"generation = {generation}")
     population: List[Individual] = []
     for _ in range(population_size):
         genes = [random.randint(0, perimeter_length) for _ in range(k_exits)]
         individual = Individual(genes)
         population.append(individual)
-
+    
+    history[generation] = []
     for ind in population:
         if psi_evaluator.get_evaluation_count() >= max_evals:
             break
         ind.fitness = psi_evaluator.evaluate(ind.genes)
+        history[generation].append(ind.fitness)
+    
 
     population.sort()
     best_overall_individual = population[0]
 
-    counter = 0
     while psi_evaluator.get_evaluation_count() < max_evals:
-        counter += 1
-        print(f"counter = {counter}")
+        generation += 1
+        print(f"generation = {generation}")
+        history[generation] = []
 
         next_population: List[Individual] = []
 
@@ -121,6 +127,7 @@ def evolutionary_algorithm(
             offspring1 = Individual(offspring1_genes)
             if psi_evaluator.get_evaluation_count() < max_evals:
                 offspring1.fitness = psi_evaluator.evaluate(offspring1.genes)
+                history[generation].append(offspring1.fitness)
             else:
                 offspring1.fitness = float("inf")
             next_population.append(offspring1)
@@ -129,6 +136,7 @@ def evolutionary_algorithm(
                 offspring2 = Individual(offspring2_genes)
                 if psi_evaluator.get_evaluation_count() < max_evals:
                     offspring2.fitness = psi_evaluator.evaluate(offspring2.genes)
+                    history[generation].append(offspring2.fitness)
                 else:
                     offspring2.fitness = float("inf")
                 next_population.append(offspring2)
@@ -147,4 +155,5 @@ def evolutionary_algorithm(
         best_overall_individual.genes,
         best_overall_individual.fitness,
         psi_evaluator.get_evaluation_count(),
+        history
     )
