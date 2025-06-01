@@ -18,7 +18,7 @@ class MainProcess:
         self.show_process = show_process
 
     def run(self):
-        random_domain = [domain for domain in self.domains if domain.id==10]
+        random_domain = [domain for domain in self.domains if domain.id==10][0]
         emergency_accesses, fitness_value, evals, history = evolutionary_algorithm(
             random_domain
         )
