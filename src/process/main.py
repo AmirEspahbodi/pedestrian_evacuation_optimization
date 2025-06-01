@@ -18,8 +18,9 @@ class MainProcess:
         self.show_process = show_process
 
     def run(self):
+        random_domain = [domain for domain in self.domains if domain.id==10]
         emergency_accesses, fitness_value, evals, history = evolutionary_algorithm(
-            random.choice(self.domains)
+            random_domain
         )
         print(history)
         print("optimizing completed!")
