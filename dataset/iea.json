@@ -1,5 +1,5 @@
 {
-    "numruns" : 3,
+    "numruns" : 5,
     "seed" : 1,
     "topology" : {
         "name" : "ring",
@@ -13,7 +13,7 @@
             "maxevals" : 2000,
             "recombination_prob": 0.9,
             "mutation_gamma": 0.05,
-            "migration_frequency_generations": 10,
+            "migration_frequency_generations": 3,
             "initialization" : {
                 "name": "randomvector"
             },

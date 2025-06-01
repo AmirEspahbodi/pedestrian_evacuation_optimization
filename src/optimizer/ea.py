@@ -13,7 +13,7 @@ def _gaussian_perturbation(
     perturbed_value_discrete = np.round(perturbed_value_float).astype(int)
     if int(perimeter_length) == 0:
         return 0
-    return perturbed_value_discrete % int(perimeter_length)
+    return int(perturbed_value_discrete % int(perimeter_length))
 
 
 def _set_based_recombination(
