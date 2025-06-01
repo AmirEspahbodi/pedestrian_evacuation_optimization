@@ -24,6 +24,9 @@ class MainProcess:
         )
         print(history)
         with open("hustory.txt", "w") as fp:
-            fp.write(history)
+            fp.write(str(history))
+        with open("emergency_accesses.txt") as fp:
+            fp.write(f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}")
+            
         print("optimizing completed!")
         print(emergency_accesses, fitness_value, evals)
