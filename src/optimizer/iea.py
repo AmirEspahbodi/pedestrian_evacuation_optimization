@@ -114,7 +114,7 @@ def island_evolutionary_algorithm(
                     offspring1.fitness = float("inf")
                 next_island_pop_segment.append(offspring1)
 
-                if len(next_island_pop_segment) < island_population_size:
+                if len(next_island_pop_segment) <= island_population_size:
                     offspring2 = Individual(offspring2_genes)
                     if psi_evaluator.get_evaluation_count() < max_evals:
                         offspring2.fitness = psi_evaluator.evaluate(offspring2.genes)

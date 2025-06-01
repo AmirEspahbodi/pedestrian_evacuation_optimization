@@ -63,7 +63,7 @@ def psi_helper(
         sum_fitness += calculate_fitness(domain)
     domain.remove_emergency_accesses()
     fitness = sum_fitness / num_runs
-    print(f"     fitness={fitness}, exits={emergency_accesses}")
+    print(f"     fitness={fitness}, exits added={emergency_accesses}, current exits = {len(domain.get_exit_cells())}")
     return fitness
 
 
