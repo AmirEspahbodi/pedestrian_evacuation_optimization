@@ -19,7 +19,7 @@ class MainProcess:
 
     def run(self):
         random_domain = [domain for domain in self.domains if domain.id==10][0]
-        emergency_accesses, fitness_value, evals, history = island_evolutionary_algorithm(
+        emergency_accesses, fitness_value, evals, history = evolutionary_algorithm(
             random_domain
         )
         print(fitness_value)
