@@ -154,6 +154,6 @@ def evolutionary_algorithm(
     return (
         best_overall_individual.genes,
         best_overall_individual.fitness,
-        psi_evaluator.get_evaluation_count(),
+        # psi_evaluator.get_evaluation_count(),
         history,
     )
