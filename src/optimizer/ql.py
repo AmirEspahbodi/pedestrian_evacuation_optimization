@@ -425,7 +425,7 @@ def q_learning_exit_optimizer(
             max_evals=max_evals,
         )
 
-        return best_solution, best_fitness
+        return best_solution, best_fitness, optimizer.fitness_history
 
     except Exception as e:
         print(f"Error during optimization: {e}")
