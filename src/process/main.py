@@ -8,7 +8,7 @@ from src.simulator.simulation_engine import main as main_engine
 from src.optimizer.ea import evolutionary_algorithm
 from src.optimizer.iea import island_evolutionary_algorithm
 from src.optimizer.greedy import greedy_algorithm
-from optimizer.ql import optimize_exits_q_learning
+from optimizer.ql import q_learning_exit_optimizer
 
 
 class MainProcess:
@@ -20,7 +20,7 @@ class MainProcess:
 
     def run(self):
         random_domain = [domain for domain in self.domains if domain.id == 10][0]
-        emergency_accesses, fitness_value, evals, history = optimize_exits_q_learning(
+        emergency_accesses, fitness_value, evals, history = q_learning_exit_optimizer(
             random_domain
         )
         print(fitness_value)
