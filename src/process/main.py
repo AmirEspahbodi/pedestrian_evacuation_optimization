@@ -20,7 +20,7 @@ class MainProcess:
 
     def run(self):
         random_domain = [domain for domain in self.domains if domain.id == 10][0]
-        emergency_accesses, fitness_value, history = island_evolutionary_algorithm(
+        emergency_accesses, fitness_value, history = q_learning_exit_optimizer(
             random_domain
         )
         print(fitness_value)
