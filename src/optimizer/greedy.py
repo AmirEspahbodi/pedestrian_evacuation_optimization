@@ -15,7 +15,7 @@ def greedy_algorithm(
     perimeter_length = 2 * (domain.width + domain.height)
     k_exits = SimulationConfig.num_emergency_exits
 
-    E_current_solution: List[float] = []
+    E_solutions: List[float] = []
     current_fitness = float("inf")
 
     eta = perimeter_length // omega_exit_width + 1
@@ -31,7 +31,7 @@ def greedy_algorithm(
         candidate_location = p_start_scan
 
         for j in range(eta):
-            temp_accesses = E_current_solution + [candidate_location]
+            temp_accesses = E_solutions + [candidate_location]
             current_eval_psi = psi_evaluator.evaluate(temp_accesses)
             print(
                 f"     j={j}, temp_accesses={temp_accesses}, current_eval_psi={current_eval_psi}\n"
@@ -45,8 +45,7 @@ def greedy_algorithm(
             if candidate_location >= perimeter_length:
                 candidate_location -= perimeter_length
 
-        E_current_solution.append(chosen_exit_for_this_iteration)
+        E_solutions.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
-    print(E_current_solution, current_fitness)
-    return E_current_solution, current_fitness
+    return E_solutions, current_fitness
