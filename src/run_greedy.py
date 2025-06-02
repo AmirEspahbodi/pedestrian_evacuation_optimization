@@ -16,5 +16,5 @@ if __name__ == "__main__":
             f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
         )
 
-    print("optimizing completed!")
+    print("greedy optimizing completed!")
     print(emergency_accesses, fitness_value)

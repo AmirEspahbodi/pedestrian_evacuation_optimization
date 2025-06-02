@@ -12,12 +12,12 @@ if __name__ == "__main__":
     print(fitness_value)
     print(emergency_accesses)
     print(history)
-    with open("ql_hustory.txt", "w") as fp:
+    with open("ea_hustory.txt", "w") as fp:
         fp.write(str(history))
-    with open("ql_emergency_accesses.txt", "w") as fp:
+    with open("ea_emergency_accesses.txt", "w") as fp:
         fp.write(
             f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
         )
 
-    print("ql optimizing completed!")
+    print("ea optimizing completed!")
     print(emergency_accesses, fitness_value)

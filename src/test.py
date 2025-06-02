@@ -40,7 +40,7 @@ def main():
 
     # sys.exit(app.exec())
     
-    psi_calcolator(domain, OptimizerStrategy.IEA, [124, 42, 277])
+    psi_calcolator(domain, OptimizerStrategy.IEA, [i for i, j in [(99, 2), (188, 2), (270, 2)]])
 
 
 if __name__ == "__main__":

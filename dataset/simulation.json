@@ -1,7 +1,7 @@
 {
 	"numSimulations" : 20,
     "numEmergencyExits": 3,
-    "omega": 1,
+    "omega": 2,
     "simulator": {
         "timeLimit": 60,
         "cellularAutomatonParameters": {
