@@ -87,7 +87,6 @@ def update_DFF(dff, diff):
     # dff[:] = np.ones((dim_x, dim_y))
 
 
-@lru_cache(1)
 def init_SFF(_exit_cells, _dim_x, _dim_y, drawS):
     # start with exit's cells
     SFF = np.empty((_dim_x, _dim_y))  # static floor field
@@ -114,7 +113,6 @@ def init_SFF(_exit_cells, _dim_x, _dim_y, drawS):
     return SFF
 
 
-@lru_cache(16 * 1024)
 def get_neighbors(cell):
     """
     von Neumann neighborhood

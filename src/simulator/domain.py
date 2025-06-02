@@ -376,6 +376,9 @@ class Domain(BaseModel):
 
     def get_pedestrians(self):
         return self._pedestrians
+    
+    def get_pedestrians_np_count(self):
+        return np.sum(self.peds)
 
     def add_emergency_accesses(self, emergency_accesses: list[tuple[int, int]]):
         for access in emergency_accesses:

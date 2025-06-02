@@ -17,24 +17,25 @@ def main():
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
+    domain = [domain for domain in environment.domains if domain.id == 10][0]
 
     emergency_accesses, fitness_value, evals = evolutionary_algorithm(
-        domain=environment.domains[5]
+        domain=domain
     )
 
-    environment.domains[5].add_emergency_accesses(emergency_accesses)
+    domain.add_emergency_accesses(emergency_accesses)
     # Create and show main window
-    window = DomainVisualizerWindow(environment.domains[5])
+    window = DomainVisualizerWindow(domain)
     window.show()
 
-    environment.domains[5].is_simulation_finished = True
-    environment.domains[5].calculate_peds_distance_to_nearest_exit()
+    domain.is_simulation_finished = True
+    domain.calculate_peds_distance_to_nearest_exit()
     window.updateGrid()
-    engine_main(domain=environment.domains[5], window=window)
+    engine_main(domain=domain, window=window)
 
     print("Simulation completed.")
     print(
-        f"pedestrian left in are {environment.domains[5].get_left_pedestrians_count()}."
+        f"pedestrian left in are {domain.get_left_pedestrians_count()}."
     )
 
     sys.exit(app.exec())
