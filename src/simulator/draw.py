@@ -27,7 +27,7 @@ class GridWidget(QWidget):
     def __init__(self, domain: "Domain", parent=None):
         super().__init__(parent)
         self.domain = domain
-        self.cell_size = 10  # Base size for each cell
+        self.cell_size = 7  # Base size for each cell
         self.grid_line_width = 1
         self.hover_cell = None
         self.selected_cell = None
@@ -109,22 +109,22 @@ class GridWidget(QWidget):
         painter.fillRect(rect, color)
 
         # Draw random number in cell if cell is large enough
-        if self.domain.is_simulation_finished:
-            number = "{:.2f}".format(self.domain.cells[y][x].static_field)
+        # if self.domain.is_simulation_finished:
+        #     number = "{:.2f}".format(self.domain.cells[y][x].static_field)
 
-            # Set font size based on cell size
-            font_size = max(4, self.cell_size // 2 - 5)
-            font = QFont("Arial", font_size)
-            painter.setFont(font)
+        #     # Set font size based on cell size
+        #     font_size = max(4, self.cell_size // 2 - 5)
+        #     font = QFont("Arial", font_size)
+        #     painter.setFont(font)
 
-            # Set text color based on background (white text on dark backgrounds, black on light)
-            if state in [CAState.OBSTACLE]:
-                painter.setPen(QColor(255, 255, 255))  # White text
-            else:
-                painter.setPen(QColor(0, 0, 0))  # Black text
+        #     # Set text color based on background (white text on dark backgrounds, black on light)
+        #     if state in [CAState.OBSTACLE]:
+        #         painter.setPen(QColor(255, 255, 255))  # White text
+        #     else:
+        #         painter.setPen(QColor(0, 0, 0))  # Black text
 
-            # Draw the number centered in the cell
-            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, str(number))
+        #     # Draw the number centered in the cell
+        #     painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, str(number))
 
     def drawGrid(self, painter: QPainter):
         """Draw grid lines."""

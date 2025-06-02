@@ -57,7 +57,7 @@ class Domain(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         print(
-            f"Initializing Domain {self.id} with width={self.width}, height={self.height}, "
+            f"Initializing Domain {self.id} with width={self.width}, height={self.height}, perimeter={2*(self.width+self.height)}"
         )
 
         self._init_cells()
@@ -385,13 +385,16 @@ class Domain(BaseModel):
             try:
                 pa, wa = access
                 for i in range(pa, pa + wa):
-                    height, width = self._get_perimeter_coordinates(i)
+                    if i>=2*(self.width-1 + self.height-1):
+                        i -= 2*(self.width-1 + self.height-1)
+                    height, width = self._get_perimeter_point(i)
                     if self.walls[width][height] == -1:
                         self.walls[width][height] = 2
                         self._storage_cells[height][
                             width
                         ].state = CAState.EMERGENCY_ACCESS
-            except BaseException:
+            except BaseException as e:
+                print(f"error {e}")
                 print(emergency_accesses)
 
     def remove_emergency_accesses(self):
@@ -399,6 +402,64 @@ class Domain(BaseModel):
         for access in self.accesses:
             pa, wa = access.pa, access.wa  # Pα, Wα
             for i in range(pa, pa + wa):
-                height, width = self._get_perimeter_coordinates(i)
+                if i>=2*(self.width-1 + self.height-1):
+                    i -= 2*(self.width-1 + self.height-1)
+                height, width = self._get_perimeter_point(i)
                 self.walls[width][height] = 1
                 self._storage_cells[height][width].state = CAState.ACCESS
+
+
+
+    def _get_perimeter_point(self, p):
+        if self.width <= 0 or self.height <= 0:
+            raise ValueError("self.Width and self.height must be positive")
+        
+        if self.width == 1 and self.height == 1:
+            if p != 0:
+                raise ValueError("For 1x1 area, only point 0 is valid")
+            return (0, 0)
+        
+        perimeter_length = 2 * (self.width - 1 + self.height - 1)
+        
+        if p < 0 or p >= perimeter_length:
+            raise ValueError(f"Point p must be between 0 and {perimeter_length - 1}")
+        
+        if self.width == 1:
+            if p < self.height:
+                return (p, 0)
+            else:
+                return (self.height - 1 - (p - self.height), 0)
+        
+        if self.height == 1:
+            if p < self.width:
+                return (0, p)
+            else:
+                return (0, self.width - 1 - (p - self.width))
+        
+        if p < self.width:
+            return (0, p)
+        
+        p -= self.width
+        
+        if p < self.height - 1:
+            return (p + 1, self.width - 1)
+        
+        p -= (self.height - 1)
+        
+        if p < self.width - 1:
+            return (self.height - 1, self.width - 2 - p)
+        
+        p -= (self.width - 1)
+        
+        return (self.height - 2 - p, 0)
+
+    def test_emergency_accesses(self, emergency_exit: Tuple[int, int], real_corrdinates: set[Tuple[int, int]]):
+        pa, wa = emergency_exit  # Pα, Wα
+        calculated_corrdinates = set()
+        for i in range(pa, pa + wa):
+            if i>=2*(self.width-1 + self.height-1):
+                i -= 2*(self.width-1 + self.height-1)
+            height, width = self._get_perimeter_point(self.width, self.height, i)
+            calculated_corrdinates.add((height, width))
+        print(calculated_corrdinates)
+        assert calculated_corrdinates == real_corrdinates 
