@@ -48,4 +48,5 @@ def greedy_algorithm(
         E_current_solution.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
+    print(E_current_solution, current_fitness)
     return E_current_solution, current_fitness
