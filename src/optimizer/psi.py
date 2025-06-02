@@ -63,7 +63,9 @@ def psi_helper(
         sum_fitness += calculate_fitness(domain)
     domain.remove_emergency_accesses()
     fitness = sum_fitness / num_runs
-    print(f"     fitness={fitness}, exits added={emergency_accesses}, current exits = {len(domain.get_exit_cells())}")
+    print(
+        f"     fitness={fitness}, exits added={emergency_accesses}, current exits = {len(domain.get_exit_cells())}"
+    )
     return fitness
 
 
@@ -81,10 +83,11 @@ def psi(
 
         case OptimizerStrategy.GREEDY:
             resutl = psi_helper(GreedyConfig.numruns, domain, new_emergency_accesses)
-        
+
+        case OptimizerStrategy.QL:
+            resutl = psi_helper(EAConfig.numruns, domain, new_emergency_accesses)
         case _:
             print(f"optimizer_strategy = {optimizer_strategy}")
             print(f"emergency_accesses = {emergency_accesses}")
-            
-        
+
     return resutl

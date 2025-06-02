@@ -8,6 +8,7 @@ from src.optimizer.greedy import greedy_algorithm
 from src.optimizer.ea import evolutionary_algorithm
 from src.optimizer.iea import island_evolutionary_algorithm
 
+
 def main():
     """Main entry point for the application."""
     app = QApplication(sys.argv)

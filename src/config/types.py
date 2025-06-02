@@ -28,3 +28,4 @@ class OptimizerStrategy(StrEnum):
     EA = "ea"
     GREEDY = "greedy"
     IEA = "iea"
+    QL = "QL"

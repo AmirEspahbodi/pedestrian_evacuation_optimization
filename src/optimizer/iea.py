@@ -4,7 +4,6 @@ from typing import List, Tuple
 from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy, IEAConfig
 from .common import FitnessEvaluator, Individual
-from .psi import psi as psi_function
 from .ea import (
     _binary_tournament_selection,
     _set_based_recombination,
@@ -12,9 +11,7 @@ from .ea import (
 )
 
 
-def island_evolutionary_algorithm(
-    domain: Domain
-) -> Tuple[List[float], float, int]:
+def island_evolutionary_algorithm(domain: Domain) -> Tuple[List[float], float, int]:
     migration_frequency_generations = IEAConfig.islands[
         0
     ].migration_frequency_generations
@@ -26,7 +23,6 @@ def island_evolutionary_algorithm(
     recombination_prob: float = IEAConfig.islands[0].recombination_prob
     mutation_gamma: float = IEAConfig.islands[0].mutation_gamma
     max_evals: int = IEAConfig.islands[0].maxevals
-
 
     hostory: dict[str, dict[int, list]] = {
         "island1": {},
@@ -46,24 +42,23 @@ def island_evolutionary_algorithm(
         islands.append(island_pop)
 
     for index, island_pop in enumerate(islands):
-        hostory[f'island{index+1}'][generation] = []
+        hostory[f"island{index + 1}"][generation] = []
         for ind in island_pop:
             if psi_evaluator.get_evaluation_count() >= max_evals:
                 break
             ind.fitness = psi_evaluator.evaluate(ind.genes)
-            hostory[f'island{index+1}'][generation].append(ind.fitness)
+            hostory[f"island{index + 1}"][generation].append(ind.fitness)
         if psi_evaluator.get_evaluation_count() >= max_evals:
             break
         island_pop.sort()
 
-    best_overall_individual = Individual([]) 
+    best_overall_individual = Individual([])
     for island_pop in islands:
         if island_pop and (
             not best_overall_individual.genes
             or island_pop[0].fitness < best_overall_individual.fitness
         ):
             best_overall_individual = island_pop[0]
-
 
     while psi_evaluator.get_evaluation_count() < max_evals:
         generation += 1
@@ -72,14 +67,12 @@ def island_evolutionary_algorithm(
         for i in range(num_islands):
             if psi_evaluator.get_evaluation_count() >= max_evals:
                 break
-            hostory[f'island{i+1}'][generation] = []
+            hostory[f"island{i + 1}"][generation] = []
 
             current_island_pop = islands[i]
 
             next_island_pop_segment: List[Individual] = []
-            for _ in range(
-                math.ceil(island_population_size / 2)
-            ):  
+            for _ in range(math.ceil(island_population_size / 2)):
                 if psi_evaluator.get_evaluation_count() >= max_evals:
                     break
 
@@ -110,7 +103,7 @@ def island_evolutionary_algorithm(
                 offspring1 = Individual(offspring1_genes)
                 if psi_evaluator.get_evaluation_count() < max_evals:
                     offspring1.fitness = psi_evaluator.evaluate(offspring1.genes)
-                    hostory[f'island{i+1}'][generation].append(ind.fitness)
+                    hostory[f"island{i + 1}"][generation].append(ind.fitness)
                 else:
                     offspring1.fitness = float("inf")
                 next_island_pop_segment.append(offspring1)
@@ -119,7 +112,7 @@ def island_evolutionary_algorithm(
                     offspring2 = Individual(offspring2_genes)
                     if psi_evaluator.get_evaluation_count() < max_evals:
                         offspring2.fitness = psi_evaluator.evaluate(offspring2.genes)
-                        hostory[f'island{i+1}'][generation].append(ind.fitness)
+                        hostory[f"island{i + 1}"][generation].append(ind.fitness)
                     else:
                         offspring2.fitness = float("inf")
                     next_island_pop_segment.append(offspring2)
@@ -129,7 +122,7 @@ def island_evolutionary_algorithm(
                 and psi_evaluator.get_evaluation_count() >= max_evals
             ):
                 break
-            
+
             current_island_pop.extend(next_island_pop_segment)
             current_island_pop.sort()
             islands[i] = current_island_pop[:island_population_size]
@@ -143,9 +136,9 @@ def island_evolutionary_algorithm(
         if generation % migration_frequency_generations == 0 and num_islands > 1:
             migrants_to_send: List[Individual] = [
                 island_pop[0] for island_pop in islands if island_pop
-            ] 
+            ]
             if not migrants_to_send:
-                continue 
+                continue
             next_islands_state = [list(island_pop) for island_pop in islands]
 
             for i in range(num_islands):
@@ -169,15 +162,13 @@ def island_evolutionary_algorithm(
                 potential_immigrants = []
                 if migrant_from_prev:
                     potential_immigrants.append(migrant_from_prev)
-                if (
-                    migrant_from_next and migrant_from_next is not migrant_from_prev
-                ): 
+                if migrant_from_next and migrant_from_next is not migrant_from_prev:
                     potential_immigrants.append(migrant_from_next)
 
                 potential_immigrants.sort()
 
                 current_receiving_pop = next_islands_state[i]
-                current_receiving_pop.sort()  
+                current_receiving_pop.sort()
 
                 replaced_count = 0
                 for immigrant in potential_immigrants:
@@ -190,17 +181,15 @@ def island_evolutionary_algorithm(
                     ):
                         current_receiving_pop[
                             len(current_receiving_pop) - 1 - replaced_count
-                        ] = Individual(immigrant.genes[:])  
+                        ] = Individual(immigrant.genes[:])
                         current_receiving_pop[
                             len(current_receiving_pop) - 1 - replaced_count
                         ].fitness = immigrant.fitness
                         replaced_count += 1
-                    if (
-                        replaced_count >= 2
-                    ): 
+                    if replaced_count >= 2:
                         break
 
-                current_receiving_pop.sort() 
+                current_receiving_pop.sort()
                 next_islands_state[i] = current_receiving_pop
 
             islands = next_islands_state
@@ -216,5 +205,5 @@ def island_evolutionary_algorithm(
         best_overall_individual.genes,
         best_overall_individual.fitness,
         psi_evaluator.get_evaluation_count(),
-        hostory
+        hostory,
     )

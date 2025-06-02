@@ -343,7 +343,6 @@ def main(domain: Domain, window=None):
 
     sff = init_SFF(exit_cells, dim_x, dim_y, drawS)
 
-
     t1 = time.time()
     tsim = 0
 

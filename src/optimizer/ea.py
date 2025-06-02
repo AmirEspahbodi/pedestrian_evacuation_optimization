@@ -69,8 +69,8 @@ def evolutionary_algorithm(
     recombination_prob: float = EAConfig.islands[0].recombination_prob
     mutation_gamma: float = EAConfig.islands[0].mutation_gamma
     max_evals: int = EAConfig.islands[0].maxevals
-    history: dict[int,list[float]] = {}
-    
+    history: dict[int, list[float]] = {}
+
     generation = 0
     print(f"generation = {generation}")
     population: List[Individual] = []
@@ -78,14 +78,13 @@ def evolutionary_algorithm(
         genes = [random.randint(0, perimeter_length) for _ in range(k_exits)]
         individual = Individual(genes)
         population.append(individual)
-    
+
     history[generation] = []
     for ind in population:
         if psi_evaluator.get_evaluation_count() >= max_evals:
             break
         ind.fitness = psi_evaluator.evaluate(ind.genes)
         history[generation].append(ind.fitness)
-    
 
     population.sort()
     best_overall_individual = population[0]
@@ -156,5 +155,5 @@ def evolutionary_algorithm(
         best_overall_individual.genes,
         best_overall_individual.fitness,
         psi_evaluator.get_evaluation_count(),
-        history
+        history,
     )
