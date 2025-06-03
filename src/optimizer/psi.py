@@ -45,7 +45,7 @@ def calculate_fitness(
         min_d_star = float(min(d_stars))
         sum_d_star = float(sum(d_stars))
         term_2b = (1 / D_diagonal) * min_d_star
-        term_3b = (1 / (len(d_stars) * D_diagonal**2)) * sum_d_star
+        term_3b = (1 / ((num_total_pedestrians) * D_diagonal**2)) * sum_d_star
         fitness_value += term_2b + term_3b
 
     return fitness_value
