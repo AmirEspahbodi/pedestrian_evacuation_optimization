@@ -1,1 +1,1 @@
-emergency_accesses=[44, 216, 72], fitness_value=9.830952243251486
+emergency_accesses=[38, 33], fitness_value=1.1415710826333196

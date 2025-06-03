@@ -225,7 +225,9 @@ class Domain(BaseModel):
         for access in self.accesses:
             pa, wa = access.pa, access.wa  # Pα, Wα
             for i in range(pa, pa + wa):
-                height, width = self._get_perimeter_coordinates(i)
+                if i>=2*(self.width-1 + self.height-1):
+                    i -= 2*(self.width-1 + self.height-1)
+                height, width = self._get_perimeter_point(i)
                 self.walls[width][height] = 1
                 self._storage_cells[height][width].state = CAState.ACCESS
         for obstacle in self.obstacles:

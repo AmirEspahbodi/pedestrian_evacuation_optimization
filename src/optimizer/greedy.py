@@ -1,9 +1,10 @@
 import random
+import math
 from typing import List, Tuple
 from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy
-from .common import FitnessEvaluator, Individual
-from .psi import psi as psi_function
+from .common import FitnessEvaluator
+
 
 
 def greedy_algorithm(
@@ -18,7 +19,7 @@ def greedy_algorithm(
     E_solutions: List[float] = []
     current_fitness = float("inf")
 
-    eta = perimeter_length // omega_exit_width + 1
+    eta =  math.ceil(perimeter_length / omega_exit_width)
 
     print(f"k_exits = {k_exits}")
     print(f"eta = {eta}")
