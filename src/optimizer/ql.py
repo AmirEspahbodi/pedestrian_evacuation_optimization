@@ -379,7 +379,7 @@ class AdvancedQLearningExitOptimizer:
 
 
 def q_learning_exit_optimizer(
-    domain: Any, num_episodes: int = 30, **kwargs
+    domain: Any, num_episodes: int = 15, **kwargs
 ) -> Tuple[List[int], float]:
     """
     Main function interface for Q-learning emergency exit optimization.

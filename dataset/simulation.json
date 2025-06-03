@@ -1,7 +1,7 @@
 {
 	"numSimulations" : 20,
-    "numEmergencyExits": 3,
-    "omega": 2,
+    "numEmergencyExits": 2,
+    "omega": 1,
     "simulator": {
         "timeLimit": 60,
         "cellularAutomatonParameters": {
@@ -31,7 +31,7 @@
         }
     },
     "numPedestrians": [
-        400,
-        400
+        200,
+        200
     ]
 }
