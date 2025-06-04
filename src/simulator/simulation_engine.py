@@ -254,7 +254,7 @@ def simulate(args, domain, window):
     for t in steps:  # simulation loop
         if window:
             window.updateGrid()
-            time.sleep(0.1)
+            time.sleep(0.3)
         # print(
         #     "\tn: %3d ----  t: %3d |  N: %3d"
         #     % (n, t, int(domain.get_left_pedestrians_count()))
