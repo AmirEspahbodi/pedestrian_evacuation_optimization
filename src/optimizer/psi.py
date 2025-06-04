@@ -32,15 +32,15 @@ def calculate_fitness(
     num_non_evacuees = len(non_evacuees)
     fitness_value = float(num_non_evacuees)
     
-    t_stars = [p.t_star for p in evacuees]
-    max_t_star = float(max(t_stars))
-    sum_t_star = float(sum(t_stars))
-    term_2a = (1 / SimulationConfig.num_simulations) * max_t_star
-    term_3a = (
-        1 / (num_total_pedestrians * SimulationConfig.num_simulations**2)
-    ) * sum_t_star
-    fitness_value += term_2a + term_3a
-    
+    if num_non_evacuees == 0:
+        t_stars = [p.t_star for p in evacuees]
+        max_t_star = float(max(t_stars))
+        sum_t_star = float(sum(t_stars))
+        term_2a = max_t_star/(SimulationConfig.simulator.time_limit+1)
+        term_3a = (
+            1 / (num_total_pedestrians * SimulationConfig.simulator.time_limit**2)
+        ) * sum_t_star
+        fitness_value += term_2a + term_3a
     if num_non_evacuees > 0:
         d_stars = [p.d_star for p in non_evacuees if p.d_star is not None]
         min_d_star = float(min(d_stars))
