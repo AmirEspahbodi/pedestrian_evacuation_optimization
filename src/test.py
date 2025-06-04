@@ -21,9 +21,6 @@ def main():
     window = DomainVisualizerWindow(domain)
     window.show()
 
-    domain.is_simulation_finished = True
-    domain.calculate_peds_distance_to_nearest_exit()
-    window.updateGrid()
     # time.sleep(10)
     engine_main(domain=domain, window=window)
 

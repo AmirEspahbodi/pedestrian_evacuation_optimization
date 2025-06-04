@@ -359,9 +359,9 @@ class DomainVisualizerWindow(QMainWindow):
         # Initialize step counter
         self.step_count = 0
 
-        # Set window size
-        self.resize(800, 600)
-        self.centerWindow()
+        # self.showFullScreen()
+        self.resize(800, 900)
+        # self.centerWindow()
 
     def centerWindow(self):
         """Center the window on screen."""

@@ -1,1 +1,0 @@
-emergency_accesses=[49, 43], fitness_value=1.3482954597585834
