@@ -4,7 +4,7 @@
     "islands" : [
         {
             "numislands" : 1,
-            "popsize" : 60,
+            "popsize" : 100,
             "offspring" : 99,
             "maxevals" : 2000,
             "recombination_prob": 0.9,
