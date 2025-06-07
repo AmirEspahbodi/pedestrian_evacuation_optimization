@@ -1,6 +1,6 @@
 {
 	"numSimulations" : 20,
-    "numEmergencyExits": 3,
+    "numEmergencyExits": 2,
     "omega": 2,
     "simulator": {
         "timeLimit": 60,
