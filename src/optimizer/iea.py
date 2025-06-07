@@ -1,208 +1,173 @@
 import random
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy, IEAConfig
-from .common import FitnessEvaluator, Individual
-from .ea import (
-    _binary_tournament_selection,
-    _set_based_recombination,
-    _mutate_individual_ea,
-)
+from .common import FitnessEvaluator
 
 
-def island_evolutionary_algorithm(domain: Domain) -> Tuple[List[float], float, int]:
-    migration_frequency_generations = IEAConfig.islands[
-        0
-    ].migration_frequency_generations
-    num_islands = IEAConfig.islands[0].numislands
+Individual = List[int] # Changed to int for discrete environment
+Population = List[Individual]
+
+# --- Core Algorithm Components ---
+
+def set_based_recombination(parent1: Individual, parent2: Individual) -> Individual:
+    combined_pool = parent1 + parent2
+    random.shuffle(combined_pool)
+    
+    offspring = random.sample(combined_pool, k=len(parent1))
+    return offspring
+
+def gaussian_mutation_discrete(
+    individual: Individual,
+    gamma: float,
+    perimeter_length: int
+) -> Individual:
+    mutated_individual = individual[:]
+    
+    # Select a single exit to mutate
+    idx_to_mutate = random.randint(0, len(mutated_individual) - 1)
+    gene = mutated_individual[idx_to_mutate]
+    
+    # Apply Gaussian perturbation: e' = e * (1 + gamma * N(0,1))
+    perturbation = gamma * random.normalvariate(0, 1)
+    mutated_gene_float = gene * (1 + perturbation)
+    
+    # --- DISCRETE ADAPTATION ---
+    # Convert to a discrete value by rounding to the nearest integer
+    mutated_gene_int = int(round(mutated_gene_float))
+    
+    # Apply wrap-around logic for the discrete perimeter
+    mutated_gene_int %= perimeter_length
+    
+    mutated_individual[idx_to_mutate] = mutated_gene_int
+    return mutated_individual
+
+def tournament_selection(population: Population, fitnesses: List[float]) -> Individual:
+    idx1 = random.randint(0, len(population) - 1)
+    idx2 = random.randint(0, len(population) - 1)
+    
+    if fitnesses[idx1] < fitnesses[idx2]:
+        return population[idx1]
+    else:
+        return population[idx2]
+
+# --- Main iEA Optimizer Function ---
+
+def iEA_optimizer(
+    domain: Domain,
+) -> Dict[str, Any]:
+    # --- Algorithm Parameters from Paper Section 5.1 ---
     perimeter_length = 2 * (domain.width + domain.height)
     k_exits = SimulationConfig.num_emergency_exits
-    psi_evaluator = FitnessEvaluator(domain, OptimizerStrategy.IEA)
-    island_population_size: int = IEAConfig.islands[0].popsize
-    recombination_prob: float = IEAConfig.islands[0].recombination_prob
-    mutation_gamma: float = IEAConfig.islands[0].mutation_gamma
     max_evals: int = IEAConfig.islands[0].maxevals
-
-    hostory: dict[str, dict[int, list]] = {
+    
+    num_islands: int = 4  # 
+    island_pop_size: int = 25  # 
+    migration_frequency: int = 10  # in generations 
+    p_recombination: float = 0.9  # 
+    p_mutation: float = 1.0 
+    gamma_mutation: float = 0.05  # 
+    
+    # --- Initialization ---
+    islands = []
+    fitness_evaluator: FitnessEvaluator = FitnessEvaluator(domain=domain, optimizer_strategy=OptimizerStrategy.IEA)
+    generation_count = 0
+    
+    history = {
         "island1": {},
         "island2": {},
         "island3": {},
         "island4": {},
     }
-    generation = 0
-
-    islands: List[List[Individual]] = []
+    
+    print("Initializing islands for discrete environment...")
     for i in range(num_islands):
-        island_pop: List[Individual] = []
-        for _ in range(island_population_size):
-            genes = [random.randint(0, perimeter_length) for _ in range(k_exits)]
-            individual = Individual(genes)
-            island_pop.append(individual)
-        islands.append(island_pop)
+        # --- DISCRETE ADAPTATION ---
+        # Generate integer locations for the discrete perimeter
+        population = [
+            [random.randint(0, perimeter_length - 1) for _ in range(k_exits)]
+            for _ in range(island_pop_size)
+        ]
+        fitnesses = [fitness_evaluator.evaluate(ind) for ind in population]
+        history[f"island{i+1}"][f"{generation_count}"] = fitnesses
+        
+        islands.append({
+            "population": population,
+            "fitnesses": fitnesses
+        })
+    print(f"Initialization complete. Performed {fitness_evaluator.get_evaluation_count()} evaluations.")
 
-    for index, island_pop in enumerate(islands):
-        hostory[f"island{index + 1}"][generation] = []
-        for ind in island_pop:
-            if psi_evaluator.get_evaluation_count() >= max_evals:
-                break
-            ind.fitness = psi_evaluator.evaluate(ind.genes)
-            hostory[f"island{index + 1}"][generation].append(ind.fitness)
-        if psi_evaluator.get_evaluation_count() >= max_evals:
-            break
-        island_pop.sort()
-
-    best_overall_individual = Individual([])
-    for island_pop in islands:
-        if island_pop and (
-            not best_overall_individual.genes
-            or island_pop[0].fitness < best_overall_individual.fitness
-        ):
-            best_overall_individual = island_pop[0]
-
-    while psi_evaluator.get_evaluation_count() < max_evals:
-        generation += 1
-        print(f"generation = {generation}")
-
-        for i in range(num_islands):
-            if psi_evaluator.get_evaluation_count() >= max_evals:
-                break
-            hostory[f"island{i + 1}"][generation] = []
-
-            current_island_pop = islands[i]
-
-            next_island_pop_segment: List[Individual] = []
-            for _ in range(math.ceil(island_population_size / 2)):
-                if psi_evaluator.get_evaluation_count() >= max_evals:
-                    break
-
-                parent1 = _binary_tournament_selection(current_island_pop)
-                parent2 = _binary_tournament_selection(current_island_pop)
-
-                offspring1_genes: List[float]
-                offspring2_genes: List[float]
-
-                if random.random() < recombination_prob:
-                    offspring1_genes = _set_based_recombination(
-                        parent1.genes, parent2.genes, k_exits
-                    )
-                    offspring2_genes = _set_based_recombination(
-                        parent2.genes, parent1.genes, k_exits
-                    )
-                else:
-                    offspring1_genes = parent1.genes[:]
-                    offspring2_genes = parent2.genes[:]
-
-                _mutate_individual_ea(
-                    offspring1_genes, mutation_gamma, perimeter_length, k_exits
-                )
-                _mutate_individual_ea(
-                    offspring2_genes, mutation_gamma, perimeter_length, k_exits
-                )
-
-                offspring1 = Individual(offspring1_genes)
-                if psi_evaluator.get_evaluation_count() < max_evals:
-                    offspring1.fitness = psi_evaluator.evaluate(offspring1.genes)
-                    hostory[f"island{i + 1}"][generation].append(ind.fitness)
-                else:
-                    offspring1.fitness = float("inf")
-                next_island_pop_segment.append(offspring1)
-
-                if len(next_island_pop_segment) < island_population_size:
-                    offspring2 = Individual(offspring2_genes)
-                    if psi_evaluator.get_evaluation_count() < max_evals:
-                        offspring2.fitness = psi_evaluator.evaluate(offspring2.genes)
-                        hostory[f"island{i + 1}"][generation].append(ind.fitness)
-                    else:
-                        offspring2.fitness = float("inf")
-                    next_island_pop_segment.append(offspring2)
-
-            if (
-                not next_island_pop_segment
-                and psi_evaluator.get_evaluation_count() >= max_evals
-            ):
-                break
-
-            current_island_pop.extend(next_island_pop_segment)
-            current_island_pop.sort()
-            islands[i] = current_island_pop[:island_population_size]
-
-            if islands[i] and islands[i][0].fitness < best_overall_individual.fitness:
-                best_overall_individual = islands[i][0]
-
-        if psi_evaluator.get_evaluation_count() >= max_evals:
-            break
-
-        if generation % migration_frequency_generations == 0 and num_islands > 1:
-            migrants_to_send: List[Individual] = [
-                island_pop[0] for island_pop in islands if island_pop
-            ]
-            if not migrants_to_send:
-                continue
-            next_islands_state = [list(island_pop) for island_pop in islands]
+    # --- Main Evolution Loop ---
+    while fitness_evaluator.get_evaluation_count() < max_evals:
+        # Migration Event
+        if generation_count > 0 and generation_count % migration_frequency == 0:
+            island_bests = []
+            island_worsts_indices = []
+            for island in islands:
+                best_idx = min(range(len(island["fitnesses"])), key=island["fitnesses"].__getitem__)
+                worst_idx = max(range(len(island["fitnesses"])), key=island["fitnesses"].__getitem__)
+                island_bests.append(island["population"][best_idx][:])
+                island_worsts_indices.append(worst_idx)
 
             for i in range(num_islands):
-                if not islands[i]:
-                    continue
+                left_neighbor_idx = (i - 1 + num_islands) % num_islands
+                right_neighbor_idx = (i + 1) % num_islands
+                migrant = random.choice([island_bests[left_neighbor_idx], island_bests[right_neighbor_idx]])
+                worst_idx = island_worsts_indices[i]
+                islands[i]["population"][worst_idx] = migrant
+                islands[i]["fitnesses"][worst_idx] = float('inf')
+        
+        generation_count += 1
 
-                prev_island_idx = (i - 1 + num_islands) % num_islands
-                migrant_from_prev = (
-                    migrants_to_send[prev_island_idx]
-                    if prev_island_idx < len(migrants_to_send)
-                    else None
-                )
+        # Evolve each island
+        for i, island in enumerate(islands):
+            best_idx = min(range(len(island["fitnesses"])), key=island["fitnesses"].__getitem__)
+            elite_ind = island["population"][best_idx][:]
+            elite_fitness = island["fitnesses"][best_idx]
 
-                next_island_idx = (i + 1) % num_islands
-                migrant_from_next = (
-                    migrants_to_send[next_island_idx]
-                    if next_island_idx < len(migrants_to_send)
-                    else None
-                )
+            new_population = [elite_ind]
+            new_fitnesses = [elite_fitness]
+            
+            for _ in range(island_pop_size - 1):
+                parent1 = tournament_selection(island["population"], island["fitnesses"])
+                parent2 = tournament_selection(island["population"], island["fitnesses"])
+                
+                if random.random() < p_recombination:
+                    offspring = set_based_recombination(parent1, parent2)
+                else:
+                    offspring = parent1[:]
+                
+                if random.random() < p_mutation:
+                    # --- DISCRETE ADAPTATION ---
+                    offspring = gaussian_mutation_discrete(offspring, gamma_mutation, perimeter_length)
+                
+                new_population.append(offspring)
+                temp = fitness_evaluator.evaluate(offspring)
+                if [f"{generation_count}"] in history[f"island{i+1}"].keys():
+                    history[f"island{i+1}"][f"{generation_count}"].append(temp)
+                else:
+                    history[f"island{i+1}"][f"{generation_count}"] = [temp]
+                
+                new_fitnesses.append(temp)
+                if fitness_evaluator.get_evaluation_count() >= max_evals: break
+            
+            island["population"] = new_population
+            island["fitnesses"] = new_fitnesses
+            if fitness_evaluator.get_evaluation_count() >= max_evals: break
+        
+        if fitness_evaluator.get_evaluation_count() >= max_evals: break
 
-                potential_immigrants = []
-                if migrant_from_prev:
-                    potential_immigrants.append(migrant_from_prev)
-                if migrant_from_next and migrant_from_next is not migrant_from_prev:
-                    potential_immigrants.append(migrant_from_next)
+    print(f"\n--- Optimization Finished (Evaluations: {fitness_evaluator.get_evaluation_count()}) ---")
+    
+    # Find the globally best solution
+    global_best_fitness = float('inf')
+    global_best_individual = None
+    for island in islands:
+        best_idx = min(range(len(island["fitnesses"])), key=island["fitnesses"].__getitem__)
+        if island["fitnesses"][best_idx] < global_best_fitness:
+            global_best_fitness = island["fitnesses"][best_idx]
+            global_best_individual = island["population"][best_idx]
 
-                potential_immigrants.sort()
+    return global_best_individual, global_best_fitness, history
 
-                current_receiving_pop = next_islands_state[i]
-                current_receiving_pop.sort()
-
-                replaced_count = 0
-                for immigrant in potential_immigrants:
-                    if (
-                        replaced_count < len(current_receiving_pop)
-                        and immigrant.fitness
-                        < current_receiving_pop[
-                            len(current_receiving_pop) - 1 - replaced_count
-                        ].fitness
-                    ):
-                        current_receiving_pop[
-                            len(current_receiving_pop) - 1 - replaced_count
-                        ] = Individual(immigrant.genes[:])
-                        current_receiving_pop[
-                            len(current_receiving_pop) - 1 - replaced_count
-                        ].fitness = immigrant.fitness
-                        replaced_count += 1
-                    if replaced_count >= 2:
-                        break
-
-                current_receiving_pop.sort()
-                next_islands_state[i] = current_receiving_pop
-
-            islands = next_islands_state
-
-            for island_pop in islands:
-                if (
-                    island_pop
-                    and island_pop[0].fitness < best_overall_individual.fitness
-                ):
-                    best_overall_individual = island_pop[0]
-
-    return (
-        best_overall_individual.genes,
-        best_overall_individual.fitness,
-        hostory,
-    )

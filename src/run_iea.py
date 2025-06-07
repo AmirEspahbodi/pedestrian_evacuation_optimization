@@ -1,12 +1,12 @@
 from src.simulator.environment import Environment
-from src.optimizer.iea import island_evolutionary_algorithm
+from src.optimizer.iea import iEA_optimizer
 
 if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 5][0]
-    emergency_accesses, fitness_value, history = island_evolutionary_algorithm(
+    emergency_accesses, fitness_value, history = iEA_optimizer(
         random_domain
     )
     print(fitness_value)
