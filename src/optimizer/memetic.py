@@ -164,4 +164,4 @@ class MemeticAlgorithm:
                         self.population[j] = refined_individual
                         break
 
-        return best_overall_individual, best_overall_fitness
+        return best_overall_individual, best_overall_fitness, history

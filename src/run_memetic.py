@@ -7,18 +7,18 @@ if __name__ == "__main__":
     )
     random_domain = [domain for domain in environment.domains if domain.id == 5][0]
     memetic_algo = MemeticAlgorithm(random_domain)
-    best_solution, best_fitness = memetic_algo.run()
+    best_solution, best_fitness, history = memetic_algo.run()
     
     print(best_solution)
     print(best_fitness)
     
-    # print(history)
-    # with open("ea_hustory.txt", "w") as fp:
-    #     fp.write(str(history))
-    # with open("ea_emergency_accesses.txt", "w") as fp:
-    #     fp.write(
-    #         f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
-    #     )
+    print(history)
+    with open("ea_hustory.txt", "w") as fp:
+        fp.write(str(history))
+    with open("ea_emergency_accesses.txt", "w") as fp:
+        fp.write(
+            f"emergency_accesses={best_solution}, fitness_value={best_fitness}"
+        )
 
-    # print("ea optimizing completed!")
-    # print(emergency_accesses, fitness_value)
+    print("ea optimizing completed!")
+    print(best_solution, best_fitness)
