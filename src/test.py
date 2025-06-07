@@ -16,7 +16,7 @@ def main():
 
     app = QApplication(sys.argv)
     
-    domain.add_emergency_accesses([(91, 2), (200, 2)])
+    domain.add_emergency_accesses([(89, 1), (200, 1)])
     # Create and show main window
     window = DomainVisualizerWindow(domain)
     window.show()
