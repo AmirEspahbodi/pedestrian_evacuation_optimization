@@ -3,7 +3,7 @@
     "numEmergencyExits": 3,
     "omega": 2,
     "simulator": {
-        "timeLimit": 70,
+        "timeLimit": 60,
         "cellularAutomatonParameters": {
             "kappaStatic": 2.0,
             "kappaDynamic": 1.0,
@@ -31,7 +31,7 @@
         }
     },
     "numPedestrians": [
-        300,
-        300
+        200,
+        200
     ]
 }

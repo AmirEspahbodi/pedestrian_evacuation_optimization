@@ -1,5 +1,5 @@
 {
-    "numruns" : 20,
+    "numruns" : 10,
     "seed" : 1,
     "topology" : {
         "name" : "ring",

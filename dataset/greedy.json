@@ -1,12 +1,12 @@
 {
-    "numruns" : 20,
+    "numruns" : 10,
     "seed" : 1,
     "islands" : [
         {
             "numislands" : 1,
             "popsize" : 1,
             "offspring" : 1,
-            "maxevals" : 20000,
+            "maxevals" : 2000,
             "initialization" : {
                 "name": "greedyinitialization",
                 "parameters" : ["1.0"]
