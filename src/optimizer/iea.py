@@ -144,7 +144,7 @@ def iEA_optimizer(
                 
                 new_population.append(offspring)
                 temp = fitness_evaluator.evaluate(offspring)
-                if [f"{generation_count}"] in history[f"island{i+1}"].keys():
+                if f"{generation_count}" in history[f"island{i+1}"].keys():
                     history[f"island{i+1}"][f"{generation_count}"].append(temp)
                 else:
                     history[f"island{i+1}"][f"{generation_count}"] = [temp]
