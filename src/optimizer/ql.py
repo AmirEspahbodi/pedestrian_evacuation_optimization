@@ -59,36 +59,12 @@ def q_learning_exit_optimizer(
     exploration_decay_rate: float = 0.999,
     min_exploration_rate: float = 0.01,
 ) -> Tuple[Optional[List[int]], float]:
-    """
-    Optimizes K emergency exit placements on a perimeter using Q-learning.
-
-    Args:
-        domain (Any): An opaque variable representing the environment's static
-                      parameters, passed directly to the fitness evaluator.
-        psi_evaluator (FitnessEvaluator): An object with an `evaluate` method
-                      that takes a list of exit positions and the domain,
-                      returning a float score (lower is better).
-        k_exits (int): The number of emergency exits to place (the length of the vector `k`).
-        perimeter_length (int): The total number of discrete points on the perimeter.
-        omega (int): The fixed length/width of each emergency exit.
-        num_episodes (int): The total number of training episodes to run.
-        max_evals (int): The maximum number of fitness evaluations allowed.
-        learning_rate_alpha (float): The learning rate for Q-value updates.
-        discount_factor_gamma (float): The discount factor for future rewards.
-        exploration_rate_epsilon (float): The initial probability of choosing a random action.
-        exploration_decay_rate (float): The rate at which epsilon decays per episode.
-        min_exploration_rate (float): The minimum value for the exploration rate.
-
-    Returns:
-        A tuple containing the best exit configuration found (as a list of integers)
-        and its corresponding fitness score.
-    """
+    
     omega = SimulationConfig.omega
     perimeter_length = 2 * (domain.width + domain.height)
     k_exits = SimulationConfig.num_emergency_exits
     psi_evaluator = FitnessEvaluator(domain, OptimizerStrategy.IEA)
     max_evals: int = IEAConfig.islands[0].maxevals
-    
     
     # Define the valid range for an exit's starting position
     max_val_for_element = perimeter_length - omega
