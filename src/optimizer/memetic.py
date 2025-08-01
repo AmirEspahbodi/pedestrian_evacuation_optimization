@@ -139,6 +139,14 @@ class MemeticAlgorithm:
             # Evaluate current population
             fitness_scores = self._evaluate_population()
 
+            # Update global best and time-to-best
+            current_best_idx = np.argmin(fitness_scores)
+            current_best_fitness = fitness_scores[current_best_idx]
+            if current_best_fitness < best_overall_fitness:
+                best_overall_fitness = current_best_fitness
+                best_overall_individual = self.population[current_best_idx]
+                time_to_best = time.perf_counter() - start_time
+
             print(
                 f"Episode {episode + 1}/{num_episodes} | "
                 f"Best Fitness: {best_overall_fitness:.4f} | "
@@ -178,12 +186,6 @@ class MemeticAlgorithm:
             final_fitness = self._evaluate_population()
             history[f"episode-{episode + 1}"] = final_fitness
             
-            # Update global best and time-to-best
-            current_best_idx = np.argmin(fitness_scores)
-            current_best_fitness = fitness_scores[current_best_idx]
-            if current_best_fitness < best_overall_fitness:
-                best_overall_fitness = current_best_fitness
-                best_overall_individual = self.population[current_best_idx]
-                time_to_best = time.perf_counter() - start_time
+
 
         return best_overall_individual, best_overall_fitness, history, time_to_best
