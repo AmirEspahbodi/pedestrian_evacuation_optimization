@@ -52,7 +52,7 @@ def greedy_algorithm(
         chosen_exit_for_this_iteration = -1.0
 
         # Random start point on the perimeter
-        p_start_scan = random.uniform(0, perimeter_length)
+        p_start_scan = random.randint(0, perimeter_length)
         candidate_location = p_start_scan
 
         # Inner loop: scan eta candidate positions
