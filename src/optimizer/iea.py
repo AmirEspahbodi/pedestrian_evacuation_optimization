@@ -57,7 +57,7 @@ def iEA_optimizer(
     max_evals: int = IEAConfig.islands[0].maxevals
     num_islands = 4
     pop_size = 25
-    migration_freq = 10
+    migration_freq = IEAConfig.islands[0].migration_frequency_generations
     p_recomb = 0.9
     p_mut = 1.0
     gamma = 0.05
