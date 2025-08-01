@@ -5,7 +5,7 @@ if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
-    random_domain = [domain for domain in environment.domains if domain.id == 18][0]
+    random_domain = [domain for domain in environment.domains if domain.id == 10][0]
     emergency_accesses, fitness_value, history, time_to_best = iEA_optimizer(
         random_domain
     )
