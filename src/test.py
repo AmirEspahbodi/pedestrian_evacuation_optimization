@@ -17,16 +17,16 @@ def main():
         print(f"id={domain.id}, p={2*(domain.height+domain.width)}")
     domain = [domain for domain in environment.domains if domain.id == 18][0]
 
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv)
     e_exits = [(40, 2), (140, 2), (210, 2)]
     
     domain.add_emergency_accesses(e_exits)
     # Create and show main window
-    window = DomainVisualizerWindow(domain)
-    window.show()
+    # window = DomainVisualizerWindow(domain)
+    # window.show()
 
     # time.sleep(10)
-    engine_main(domain=domain, window=window)
+    engine_main(domain=domain, window=None)
 
     print("Simulation completed.")
     print(
@@ -34,7 +34,7 @@ def main():
     )
     print(psi_helper(7, domain, e_exits))
 
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
     
 
 if __name__ == "__main__":

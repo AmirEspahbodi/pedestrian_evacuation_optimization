@@ -6,11 +6,12 @@ if __name__ == "__main__":
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 10][0]
-    emergency_accesses, fitness_value = greedy_algorithm(
+    emergency_accesses, fitness_value, time_of_best = greedy_algorithm(
         random_domain
     )
-    print(fitness_value)
-    print(emergency_accesses)
+    print(f"time_of_best = {time_of_best}")
+    print(f"fitness_value = {fitness_value}")
+    print(f"emergency_accesses = {emergency_accesses}")
     with open("greedy_emergency_accesses.txt", "w") as fp:
         fp.write(
             f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
