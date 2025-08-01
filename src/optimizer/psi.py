@@ -42,7 +42,14 @@ def calculate_fitness(
         avg_d_star = w5 * (float(sum(d_stars))/num_total_pedestrians)/D_diagonal
         fitness_value += min_d_star + avg_d_star
 
+    
     fitness_value += max_t_star + agg_t_star
+
+    # print(w1 * float(num_non_evacuees))
+    # print(max_t_star)
+    # print(agg_t_star)
+    # print(min_d_star)
+    # print(avg_d_star)
 
     return fitness_value
 
@@ -50,6 +57,7 @@ def calculate_fitness(
 def psi_helper(
     num_runs: int, domain: Domain, emergency_accesses: list[tuple[int, int]]
 ):
+    domain.remove_emergency_accesses()
     domain.add_emergency_accesses(emergency_accesses)
     sum_fitness = 0
     for _ in range(num_runs):
@@ -60,7 +68,7 @@ def psi_helper(
     domain.remove_emergency_accesses()
     fitness = sum_fitness / num_runs
     print(
-        f"     fitness={fitness}, exits added={emergency_accesses}, current exits = {len(domain.get_exit_cells())}"
+        f"     fitness={fitness}, e exits={emergency_accesses}"
     )
     return fitness
 

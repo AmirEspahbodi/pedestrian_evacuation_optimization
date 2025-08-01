@@ -2,8 +2,9 @@ import sys
 from .simulator.environment import Environment
 from .simulator.draw import DomainVisualizerWindow
 from PyQt6.QtWidgets import QApplication
-import time
 from src.simulator.simulation_engine import main as engine_main
+from src.optimizer.psi import psi_helper
+
 
 def main():
     """Main entry point for the application."""
@@ -17,8 +18,9 @@ def main():
     domain = [domain for domain in environment.domains if domain.id == 10][0]
 
     app = QApplication(sys.argv)
+    e_exits = [(40, 2), (140, 2), (210, 2)]
     
-    domain.add_emergency_accesses([(40, 2), (140, 2), (210, 2)])
+    domain.add_emergency_accesses(e_exits)
     # Create and show main window
     window = DomainVisualizerWindow(domain)
     window.show()
@@ -30,6 +32,7 @@ def main():
     print(
         f"pedestrian left in are {domain.get_left_pedestrians_count()}."
     )
+    print(psi_helper(7, domain, e_exits))
 
     sys.exit(app.exec())
     
