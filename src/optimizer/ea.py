@@ -9,84 +9,89 @@ from .common import FitnessEvaluator, Individual
 
 def _gaussian_perturbation(
     value: float, gamma: float, perimeter_length: float
-) -> float:
-    perturbed_value_float = value * (1 + gamma * np.random.normal(0, 1))
-    perturbed_value_discrete = np.round(perturbed_value_float).astype(int)
+) -> int:
+    perturbed = value * (1 + gamma * np.random.normal(0, 1))
+    discrete = int(np.round(perturbed))
     if int(perimeter_length) == 0:
         return 0
-    return int(perturbed_value_discrete % int(perimeter_length))
-
+    return discrete % int(perimeter_length)
 
 def _set_based_recombination(
-    parent1_genes: List[float], parent2_genes: List[float], k_exits: int
+    p1: List[float], p2: List[float], k_exits: int
 ) -> List[float]:
-    combined_genes = set(parent1_genes) | set(parent2_genes)
-    available = list(combined_genes)
-    if len(available) < k_exits:
-        return random.choices(available, k=k_exits)
-    return random.sample(available, k=k_exits)
-
+    combined = set(p1) | set(p2)
+    genes = list(combined)
+    if len(genes) < k_exits:
+        return random.choices(genes, k=k_exits)
+    return random.sample(genes, k=k_exits)
 
 def _mutate_individual_ea(
-    individual_genes: List[float],
-    mutation_gamma: float,
+    genes: List[float],
+    gamma: float,
     perimeter_length: float,
     k_exits: int,
-):
+) -> None:
     idx = random.randrange(k_exits)
-    individual_genes[idx] = _gaussian_perturbation(
-        individual_genes[idx], mutation_gamma, perimeter_length
-    )
+    genes[idx] = _gaussian_perturbation(genes[idx], gamma, perimeter_length)
 
-
-def _binary_tournament_selection(population: List[Individual]) -> Individual:
-    i1, i2 = random.randrange(len(population)), random.randrange(len(population))
-    c1, c2 = population[i1], population[i2]
-    return c1 if c1.fitness < c2.fitness else c2
-
+def _binary_tournament_selection(pop: List[Individual]) -> Individual:
+    i, j = random.randrange(len(pop)), random.randrange(len(pop))
+    return pop[i] if pop[i].fitness < pop[j].fitness else pop[j]
 
 def evolutionary_algorithm(
     domain: Domain,
-) -> Tuple[List[float], float, Dict[int, List[float]], float]:
-    start_time = time.time()
-
-    perimeter_length = 2 * (domain.width + domain.height)
+) -> Tuple[List[float], float, float, Dict[int, List[float]]]:
+    """
+    Returns:
+      best_genes:     List of exit positions for best solution
+      best_fitness:   Its fitness value
+      time_to_best:   Seconds elapsed when that best was first discovered
+      history:        Per-generation list of all fitnesses evaluated
+    """
+    # --- Setup ---
+    perimeter = 2 * (domain.width + domain.height)
     k_exits = SimulationConfig.num_emergency_exits
     psi = FitnessEvaluator(domain, OptimizerStrategy.EA)
-    popsize = EAConfig.islands[0].popsize
-    pr = EAConfig.islands[0].recombination_prob
-    gamma = EAConfig.islands[0].mutation_gamma
-    maxevals = EAConfig.islands[0].maxevals
+
+    cfg = EAConfig.islands[0]
+    popsize, pr, gamma, maxevals = (
+        cfg.popsize, cfg.recombination_prob, cfg.mutation_gamma, cfg.maxevals
+    )
+
     history: Dict[int, List[float]] = {}
 
-    generation = 0
-    print(f"generation = {generation}")
+    # --- Start timer ---
+    start_time = time.perf_counter()
+    time_to_best = 0.0  # will store elapsed seconds when best first set
 
-    # Initialize population
+    # --- Initial population ---
+    generation = 0
     population: List[Individual] = []
     for _ in range(popsize):
-        genes = [random.randint(0, perimeter_length) for _ in range(k_exits)]
+        genes = [random.randint(0, perimeter) for _ in range(k_exits)]
         population.append(Individual(genes))
 
-    # Evaluate initial population
-    history[generation] = []
+    # Evaluate gen 0
+    history[0] = []
     for ind in population:
         if psi.get_evaluation_count() >= maxevals:
             break
         ind.fitness = psi.evaluate(ind.genes)
-        history[generation].append(ind.fitness)
+        history[0].append(ind.fitness)
 
+    # Sort & record initial best
     population.sort()
     best_overall = population[0]
-    time_to_best = time.time() - start_time
+    # record the time when this first best was obtained
+    time_to_best = time.perf_counter() - start_time
 
-    # Evolutionary loop
+    # --- Generations ---
     while psi.get_evaluation_count() < maxevals:
         generation += 1
-        print(f"generation = {generation}")
         history[generation] = []
         next_pop: List[Individual] = []
 
+        # Generate offspring in pairs
         for _ in range(math.ceil(popsize / 2)):
             if psi.get_evaluation_count() >= maxevals:
                 break
@@ -95,7 +100,7 @@ def evolutionary_algorithm(
             p1 = _binary_tournament_selection(population)
             p2 = _binary_tournament_selection(population)
 
-            # Recombination
+            # Recombination or cloning
             if random.random() < pr:
                 o1_genes = _set_based_recombination(p1.genes, p2.genes, k_exits)
                 o2_genes = _set_based_recombination(p2.genes, p1.genes, k_exits)
@@ -103,38 +108,39 @@ def evolutionary_algorithm(
                 o1_genes, o2_genes = p1.genes[:], p2.genes[:]
 
             # Mutation
-            _mutate_individual_ea(o1_genes, gamma, perimeter_length, k_exits)
-            _mutate_individual_ea(o2_genes, gamma, perimeter_length, k_exits)
+            _mutate_individual_ea(o1_genes, gamma, perimeter, k_exits)
+            _mutate_individual_ea(o2_genes, gamma, perimeter, k_exits)
 
-            # Create & evaluate offspring
-            off1 = Individual(o1_genes)
+            # Evaluate offspring1
+            o1 = Individual(o1_genes)
             if psi.get_evaluation_count() < maxevals:
-                off1.fitness = psi.evaluate(off1.genes)
-                history[generation].append(off1.fitness)
+                o1.fitness = psi.evaluate(o1.genes)
+                history[generation].append(o1.fitness)
             else:
-                off1.fitness = float('inf')
-            next_pop.append(off1)
+                o1.fitness = float('inf')
+            next_pop.append(o1)
 
+            # Evaluate offspring2 (if room)
             if len(next_pop) < popsize:
-                off2 = Individual(o2_genes)
+                o2 = Individual(o2_genes)
                 if psi.get_evaluation_count() < maxevals:
-                    off2.fitness = psi.evaluate(off2.genes)
-                    history[generation].append(off2.fitness)
+                    o2.fitness = psi.evaluate(o2.genes)
+                    history[generation].append(o2.fitness)
                 else:
-                    off2.fitness = float('inf')
-                next_pop.append(off2)
+                    o2.fitness = float('inf')
+                next_pop.append(o2)
 
         if not next_pop:
             break
 
-        # Survivor selection
+        # Merge, sort, truncate
         population.extend(next_pop)
         population.sort()
         population = population[:popsize]
 
-        # Check for new best
+        # Check for new global best
         if population[0].fitness < best_overall.fitness:
             best_overall = population[0]
-            time_to_best = time.time() - start_time
+            time_to_best = time.perf_counter() - start_time
 
-    return best_overall.genes, best_overall.fitness, history, time_to_best
+    return best_overall.genes, best_overall.fitness, time_to_best, history
