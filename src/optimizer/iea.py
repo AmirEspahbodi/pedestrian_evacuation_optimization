@@ -49,7 +49,7 @@ def iEA_optimizer(
       - history of fitnesses per island and generation
       - timestamp when global best was first found
     """
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     # Algorithm parameters
     perimeter_length = 2 * (domain.width + domain.height)
@@ -78,14 +78,14 @@ def iEA_optimizer(
     # Determine initial global best
     global_best_fitness = math.inf
     global_best_individual: Individual = []
-    best_found_time: float = start_time
+    time_to_best = time.perf_counter() - start_time
     for isl in islands:
         idx = min(range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__)
         fit = isl["fitnesses"][idx]
         if fit < global_best_fitness:
             global_best_fitness = fit
             global_best_individual = isl["population"][idx][:]
-            best_found_time = start_time
+            time_to_best = time.perf_counter() - start_time
 
     # Main loop
     while evalr.get_evaluation_count() < max_evals:
@@ -119,7 +119,7 @@ def iEA_optimizer(
             if elite_f < global_best_fitness:
                 global_best_fitness = elite_f
                 global_best_individual = elite[:]
-                best_found_time = time.time()
+                time_to_best = time.perf_counter() - start_time
 
             # Offspring
             for _ in range(pop_size - 1):
@@ -138,7 +138,7 @@ def iEA_optimizer(
                 if f < global_best_fitness:
                     global_best_fitness = f
                     global_best_individual = child[:]
-                    best_found_time = time.time()
+                    time_to_best = time.perf_counter() - start_time
 
                 if evalr.get_evaluation_count() >= max_evals:
                     break
@@ -150,4 +150,4 @@ def iEA_optimizer(
             break
 
     # Return best solution and time found
-    return global_best_individual, global_best_fitness, history, best_found_time
+    return global_best_individual, global_best_fitness, history, time_to_best
