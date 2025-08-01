@@ -1,6 +1,6 @@
 {
-	"numSimulations" : 20,
-    "numEmergencyExits": 2,
+	"numSimulations" : 7,
+    "numEmergencyExits": 3,
     "omega": 2,
     "simulator": {
         "timeLimit": 60,
@@ -31,7 +31,7 @@
         }
     },
     "numPedestrians": [
-        180,
-        180
+        300,
+        300
     ]
 }

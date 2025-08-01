@@ -1,11 +1,11 @@
 from src.simulator.environment import Environment
-from optimizer.cma_es import adapted_cma_es
+from src.optimizer.cma_es import adapted_cma_es
 
 if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
-    random_domain = [domain for domain in environment.domains if domain.id == 5][0]
+    random_domain = [domain for domain in environment.domains if domain.id == 10][0]
     emergency_accesses, fitness_value, history = adapted_cma_es(
         random_domain
     )

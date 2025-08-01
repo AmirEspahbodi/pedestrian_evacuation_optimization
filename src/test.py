@@ -12,11 +12,13 @@ def main():
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
-    domain = [domain for domain in environment.domains if domain.id == 5][0]
+    for domain in environment.domains:
+        print(f"id={domain.id}, p={2*(domain.height+domain.width)}")
+    domain = [domain for domain in environment.domains if domain.id == 10][0]
 
     app = QApplication(sys.argv)
     
-    domain.add_emergency_accesses([(88, 2), (198, 2)])
+    domain.add_emergency_accesses([(40, 2), (140, 2), (210, 2)])
     # Create and show main window
     window = DomainVisualizerWindow(domain)
     window.show()
