@@ -7,7 +7,9 @@ if __name__ == "__main__":
     )
     random_domain = [domain for domain in environment.domains if domain.id == 18][0]
     memetic_algo = MemeticAlgorithm(random_domain)
-    best_overall_individual, best_overall_fitness, history, time_to_best = memetic_algo.run()
+    best_overall_individual, best_overall_fitness, history, time_to_best = (
+        memetic_algo.run()
+    )
 
     print(f"best_overall_individual = {best_overall_individual}")
     print(f"best_overall_fitness = {best_overall_fitness}")

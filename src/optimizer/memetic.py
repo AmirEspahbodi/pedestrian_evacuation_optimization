@@ -185,7 +185,5 @@ class MemeticAlgorithm:
             # Record history after local search (final generation)
             final_fitness = self._evaluate_population()
             history[f"episode-{episode + 1}"] = final_fitness
-            
-
 
         return best_overall_individual, best_overall_fitness, history, time_to_best

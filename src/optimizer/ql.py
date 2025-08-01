@@ -84,7 +84,6 @@ def q_learning_exit_optimizer(
     best_fitness = float("inf")
     evaluations_count = 0
 
-
     for episode in range(num_episodes):
         print(f"episode {episode}")
         if evaluations_count >= max_evals:
