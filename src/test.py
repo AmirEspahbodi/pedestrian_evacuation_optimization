@@ -18,7 +18,7 @@ def main():
     domain = [domain for domain in environment.domains if domain.id == 18][0]
 
     # app = QApplication(sys.argv)
-    e_exits = [(62, 2), (144, 2), (241, 2)]
+    e_exits = [(106, 2), (218, 2), (277, 2)]
     domain.add_emergency_accesses(e_exits)
     # Create and show main window
     # window = DomainVisualizerWindow(domain)

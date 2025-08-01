@@ -11,7 +11,7 @@ class FitnessEvaluator:
         self.optimizer_strategy: OptimizerStrategy = optimizer_strategy
 
     def evaluate(self, emergency_accesses: List[float]) -> float:
-        emergency_accesses = list(emergency_accesses)
+        emergency_accesses = [int(i) for i in emergency_accesses]
         # print(emergency_accesses)
         # print(type(emergency_accesses))
         if not emergency_accesses:

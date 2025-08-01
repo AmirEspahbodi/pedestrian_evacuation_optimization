@@ -84,10 +84,8 @@ def q_learning_exit_optimizer(
     best_fitness = float("inf")
     evaluations_count = 0
 
-    hostory: dict[str, List[int]] = {}
 
     for episode in range(num_episodes):
-        hostory[f"episode-{episode}"] = []
         print(f"episode {episode}")
         if evaluations_count >= max_evals:
             print(f"INFO: Maximum evaluations ({max_evals}) reached. Stopping.")
@@ -102,7 +100,6 @@ def q_learning_exit_optimizer(
             )
 
         current_fitness = psi_evaluator.evaluate(current_solution)
-        hostory[f"episode-{episode}"].append(current_fitness)
         evaluations_count += 1
 
         # Iteratively improve the solution within the episode (a single trajectory)
@@ -167,7 +164,6 @@ def q_learning_exit_optimizer(
             next_solution[idx] = new_pos
 
             next_fitness = psi_evaluator.evaluate(next_solution)
-            hostory[f"episode-{episode}"].append(next_fitness)
 
             evaluations_count += 1
 
@@ -207,4 +203,4 @@ def q_learning_exit_optimizer(
             min_exploration_rate, exploration_rate_epsilon * exploration_decay_rate
         )
 
-    return best_solution, best_fitness, hostory
+    return best_solution, best_fitness
