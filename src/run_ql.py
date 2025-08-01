@@ -1,23 +1,17 @@
 from src.simulator.environment import Environment
-from optimizer.ql import q_learning_exit_optimizer
+from src.optimizer.ql import q_learning_exit_optimizer
 
 if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 18][0]
-    emergency_accesses, fitness_value, history = q_learning_exit_optimizer(
+    best_solution, best_fitness, history, time_to_best = q_learning_exit_optimizer(
         random_domain
     )
-    print(fitness_value)
-    print(emergency_accesses)
-    print(history)
-    with open("ql_hustory.txt", "w") as fp:
-        fp.write(str(history))
-    with open("ql_emergency_accesses.txt", "w") as fp:
-        fp.write(
-            f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
-        )
+    print(f"best_solution = {best_solution}")
+    print(f"best_fitness = {best_fitness}")
+    print(f"history = {history}")
+    print(f"time_to_best = {time_to_best}")
 
     print("ql_optimizing completed!")
-    print(emergency_accesses, fitness_value)
