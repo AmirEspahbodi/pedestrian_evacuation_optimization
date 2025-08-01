@@ -17,5 +17,5 @@ if __name__ == "__main__":
             f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
         )
 
-    print("ql_optimizing completed!")
+    print("adapted_cma_es completed!")
     print(emergency_accesses, fitness_value)
