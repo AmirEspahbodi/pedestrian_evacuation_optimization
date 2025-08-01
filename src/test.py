@@ -15,7 +15,7 @@ def main():
     )
     for domain in environment.domains:
         print(f"id={domain.id}, p={2*(domain.height+domain.width)}")
-    domain = [domain for domain in environment.domains if domain.id == 10][0]
+    domain = [domain for domain in environment.domains if domain.id == 18][0]
 
     app = QApplication(sys.argv)
     e_exits = [(40, 2), (140, 2), (210, 2)]

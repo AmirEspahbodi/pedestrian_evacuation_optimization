@@ -5,7 +5,7 @@ if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
-    random_domain = [domain for domain in environment.domains if domain.id == 10][0]
+    random_domain = [domain for domain in environment.domains if domain.id == 18][0]
     memetic_algo = MemeticAlgorithm(random_domain)
     best_solution, best_fitness, history = memetic_algo.run()
     
