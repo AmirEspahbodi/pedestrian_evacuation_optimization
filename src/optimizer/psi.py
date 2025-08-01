@@ -33,16 +33,20 @@ def calculate_fitness(
     num_non_evacuees = len(non_evacuees)
     t_stars = [p.t_star for p in evacuees]
     d_stars = [p.d_star for p in non_evacuees if p.d_star is not None]
-    
+
     fitness_value = w1 * float(num_non_evacuees)
-    max_t_star = w2 * float(max(t_stars))/(SimulationConfig.simulator.time_limit+1)
-    agg_t_star = w3 * (float(sum(t_stars))/(num_total_pedestrians)/SimulationConfig.simulator.time_limit+1)
+    max_t_star = w2 * float(max(t_stars)) / (SimulationConfig.simulator.time_limit + 1)
+    agg_t_star = w3 * (
+        float(sum(t_stars))
+        / (num_total_pedestrians)
+        / SimulationConfig.simulator.time_limit
+        + 1
+    )
     if num_non_evacuees:
-        min_d_star = w4 * float(min(d_stars))/D_diagonal
-        avg_d_star = w5 * (float(sum(d_stars))/num_total_pedestrians)/D_diagonal
+        min_d_star = w4 * float(min(d_stars)) / D_diagonal
+        avg_d_star = w5 * (float(sum(d_stars)) / num_total_pedestrians) / D_diagonal
         fitness_value += min_d_star + avg_d_star
 
-    
     fitness_value += max_t_star + agg_t_star
 
     # print(w1 * float(num_non_evacuees))
@@ -67,9 +71,7 @@ def psi_helper(
         sum_fitness += calculate_fitness(domain)
     domain.remove_emergency_accesses()
     fitness = sum_fitness / num_runs
-    print(
-        f"     fitness={fitness}, e exits={emergency_accesses}"
-    )
+    print(f"     fitness={fitness}, e exits={emergency_accesses}")
     return fitness
 
 

@@ -6,6 +6,7 @@ from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy
 from .common import FitnessEvaluator
 
+
 def greedy_algorithm(
     domain: Domain,
 ) -> Tuple[List[float], float, float]:

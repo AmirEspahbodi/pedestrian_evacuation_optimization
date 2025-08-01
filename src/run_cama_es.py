@@ -6,9 +6,7 @@ if __name__ == "__main__":
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 18][0]
-    emergency_accesses, fitness_value, history = adapted_cma_es(
-        random_domain
-    )
+    emergency_accesses, fitness_value, history = adapted_cma_es(random_domain)
     print(fitness_value)
     print(emergency_accesses)
     print(history)

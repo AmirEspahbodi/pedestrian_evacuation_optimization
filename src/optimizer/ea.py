@@ -7,14 +7,14 @@ from src.simulator.domain import Domain
 from src.config import SimulationConfig, OptimizerStrategy, EAConfig
 from .common import FitnessEvaluator, Individual
 
-def _gaussian_perturbation(
-    value: float, gamma: float, perimeter_length: float
-) -> int:
+
+def _gaussian_perturbation(value: float, gamma: float, perimeter_length: float) -> int:
     perturbed = value * (1 + gamma * np.random.normal(0, 1))
     discrete = int(np.round(perturbed))
     if int(perimeter_length) == 0:
         return 0
     return discrete % int(perimeter_length)
+
 
 def _set_based_recombination(
     p1: List[float], p2: List[float], k_exits: int
@@ -25,6 +25,7 @@ def _set_based_recombination(
         return random.choices(genes, k=k_exits)
     return random.sample(genes, k=k_exits)
 
+
 def _mutate_individual_ea(
     genes: List[float],
     gamma: float,
@@ -34,9 +35,11 @@ def _mutate_individual_ea(
     idx = random.randrange(k_exits)
     genes[idx] = _gaussian_perturbation(genes[idx], gamma, perimeter_length)
 
+
 def _binary_tournament_selection(pop: List[Individual]) -> Individual:
     i, j = random.randrange(len(pop)), random.randrange(len(pop))
     return pop[i] if pop[i].fitness < pop[j].fitness else pop[j]
+
 
 def evolutionary_algorithm(
     domain: Domain,
@@ -55,7 +58,10 @@ def evolutionary_algorithm(
 
     cfg = EAConfig.islands[0]
     popsize, pr, gamma, maxevals = (
-        cfg.popsize, cfg.recombination_prob, cfg.mutation_gamma, cfg.maxevals
+        cfg.popsize,
+        cfg.recombination_prob,
+        cfg.mutation_gamma,
+        cfg.maxevals,
     )
 
     history: Dict[int, List[float]] = {}
@@ -117,7 +123,7 @@ def evolutionary_algorithm(
                 o1.fitness = psi.evaluate(o1.genes)
                 history[generation].append(o1.fitness)
             else:
-                o1.fitness = float('inf')
+                o1.fitness = float("inf")
             next_pop.append(o1)
 
             # Evaluate offspring2 (if room)
@@ -127,7 +133,7 @@ def evolutionary_algorithm(
                     o2.fitness = psi.evaluate(o2.genes)
                     history[generation].append(o2.fitness)
                 else:
-                    o2.fitness = float('inf')
+                    o2.fitness = float("inf")
                 next_pop.append(o2)
 
         if not next_pop:

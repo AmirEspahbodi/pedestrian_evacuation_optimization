@@ -13,7 +13,7 @@ if __name__ == "__main__":
     print(f"emergency_accesses = {emergency_accesses}")
     print(f"time_to_best = {time_to_best}")
     print(history)
-    
+
     with open("ea_hustory.txt", "w") as fp:
         fp.write(str(history))
     with open("ea_emergency_accesses.txt", "w") as fp:

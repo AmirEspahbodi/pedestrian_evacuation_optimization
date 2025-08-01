@@ -11,6 +11,7 @@ Population = List[Individual]
 
 # --- Core Algorithm Components ---
 
+
 def set_based_recombination(parent1: Individual, parent2: Individual) -> Individual:
     combined_pool = parent1 + parent2
     random.shuffle(combined_pool)
@@ -19,9 +20,7 @@ def set_based_recombination(parent1: Individual, parent2: Individual) -> Individ
 
 
 def gaussian_mutation_discrete(
-    individual: Individual,
-    gamma: float,
-    perimeter_length: int
+    individual: Individual, gamma: float, perimeter_length: int
 ) -> Individual:
     mutated = individual[:]
     idx = random.randint(0, len(mutated) - 1)
@@ -37,7 +36,9 @@ def tournament_selection(population: Population, fitnesses: List[float]) -> Indi
     idx2 = random.randint(0, len(population) - 1)
     return population[idx1] if fitnesses[idx1] < fitnesses[idx2] else population[idx2]
 
+
 # --- Main iEA Optimizer with Timing ---
+
 
 def iEA_optimizer(
     domain: Domain,
@@ -65,14 +66,19 @@ def iEA_optimizer(
     # Prepare evaluator and storage
     evalr = FitnessEvaluator(domain=domain, optimizer_strategy=OptimizerStrategy.IEA)
     generation = 0
-    history: Dict[str, Dict[str, List[float]]] = {f"island{i+1}": {} for i in range(num_islands)}
+    history: Dict[str, Dict[str, List[float]]] = {
+        f"island{i + 1}": {} for i in range(num_islands)
+    }
 
     # Initialization
     islands = []
     for i in range(num_islands):
-        pop = [[random.randint(0, perimeter_length - 1) for _ in range(k_exits)] for _ in range(pop_size)]
+        pop = [
+            [random.randint(0, perimeter_length - 1) for _ in range(k_exits)]
+            for _ in range(pop_size)
+        ]
         fitnesses = [evalr.evaluate(ind) for ind in pop]
-        history[f"island{i+1}"][str(generation)] = fitnesses[:]
+        history[f"island{i + 1}"][str(generation)] = fitnesses[:]
         islands.append({"population": pop, "fitnesses": fitnesses})
 
     # Determine initial global best
@@ -94,8 +100,12 @@ def iEA_optimizer(
             bests = []
             worst_idxs = []
             for isl in islands:
-                best_i = min(range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__)
-                worst_i = max(range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__)
+                best_i = min(
+                    range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__
+                )
+                worst_i = max(
+                    range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__
+                )
                 bests.append(isl["population"][best_i][:])
                 worst_idxs.append(worst_i)
             for i, isl in enumerate(islands):
@@ -103,7 +113,7 @@ def iEA_optimizer(
                 right = (i + 1) % num_islands
                 migrant = random.choice([bests[left], bests[right]])
                 isl["population"][worst_idxs[i]] = migrant[:]
-                isl["fitnesses"][worst_idxs[i]] = float('inf')
+                isl["fitnesses"][worst_idxs[i]] = float("inf")
 
         generation += 1
         for i, isl in enumerate(islands):
@@ -125,14 +135,18 @@ def iEA_optimizer(
             for _ in range(pop_size - 1):
                 p1 = tournament_selection(isl["population"], isl["fitnesses"])
                 p2 = tournament_selection(isl["population"], isl["fitnesses"])
-                child = set_based_recombination(p1, p2) if random.random() < p_recomb else p1[:]
+                child = (
+                    set_based_recombination(p1, p2)
+                    if random.random() < p_recomb
+                    else p1[:]
+                )
                 if random.random() < p_mut:
                     child = gaussian_mutation_discrete(child, gamma, perimeter_length)
 
                 new_pop.append(child)
                 f = evalr.evaluate(child)
                 new_fit.append(f)
-                history[f"island{i+1}"].setdefault(str(generation), []).append(f)
+                history[f"island{i + 1}"].setdefault(str(generation), []).append(f)
 
                 # Check child against global best
                 if f < global_best_fitness:
