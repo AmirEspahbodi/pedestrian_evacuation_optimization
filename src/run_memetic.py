@@ -1,5 +1,7 @@
 from src.simulator.environment import Environment
 from src.optimizer.memetic import MemeticAlgorithm
+import json
+
 
 if __name__ == "__main__":
     environment = Environment.from_json_file(
@@ -16,12 +18,15 @@ if __name__ == "__main__":
     print(f"history = {history}")
     print(f"time_to_best = {time_to_best}")
 
-    print(history)
-    with open("ea_hustory.txt", "w") as fp:
-        fp.write(str(history))
-    with open("ea_emergency_accesses.txt", "w") as fp:
-        fp.write(
-            f"best_overall_individual = {best_overall_individual}, best_overall_fitness = {best_overall_fitness}, history = {history}, time_to_best = {time_to_best}"
-        )
+    data = {
+        "best_overall_individual": best_overall_individual,
+        "best_overall_fitness": best_overall_fitness,
+        "history": history,
+        "time_to_best": time_to_best
+    }
+
+    with open("memetic_results.json", "w") as f:
+        json.dump(data, f, indent=4)
+
 
     print("MemeticAlgorithm optimizing completed!")
