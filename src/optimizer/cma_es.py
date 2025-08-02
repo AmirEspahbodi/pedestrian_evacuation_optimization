@@ -91,7 +91,7 @@ def adapted_cma_es(
             if evaluation_count >= max_evaluations:
                 break
 
-        fitness_pop_hist[generation] = fitness_values.copy()
+        fitness_pop_hist[generation] = [float(i) for i in fitness_values]
 
         sorted_indices = np.argsort(fitness_values)
         current_best = fitness_values[sorted_indices[0]]

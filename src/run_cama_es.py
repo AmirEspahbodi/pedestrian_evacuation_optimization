@@ -7,13 +7,13 @@ if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
-    random_domain = [domain for domain in environment.domains if domain.id == 18][0]
+    random_domain = [domain for domain in environment.domains if domain.id == 10][0]
     best_overall_individual, best_overall_fitness, history, time_to_best = adapted_cma_es(random_domain)
     
     
     data = {
-        "best_overall_individual": best_overall_individual,
-        "best_overall_fitness": best_overall_fitness,
+        "best_overall_individual": [int(i) for i in best_overall_individual],
+        "best_overall_fitness": float(best_overall_fitness),
         "history": history,
         "time_to_best": time_to_best
     }

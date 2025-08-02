@@ -138,7 +138,7 @@ class MemeticAlgorithm:
 
             # Evaluate current population
             fitness_scores = self._evaluate_population()
-            history[f"episode-{episode + 1}"] = fitness_scores
+            history[f"episode-{episode + 1}"] = [float(i) for i in fitness_scores]
 
             # Update global best and time-to-best
             current_best_idx = np.argmin(fitness_scores)

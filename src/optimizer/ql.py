@@ -172,7 +172,7 @@ def q_learning_exit_optimizer(
                 )
 
         # Record the final fitness of this episode
-        history[f"episode-{episode + 1}"].append(current_fitness)
+        history[f"episode-{episode + 1}"].append(float(current_fitness))
 
         # Decay exploration rate
         exploration_rate_epsilon = max(
