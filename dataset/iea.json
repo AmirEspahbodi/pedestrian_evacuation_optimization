@@ -10,7 +10,7 @@
             "numislands" : 4,
             "popsize" : 25,
             "offspring" : 24,
-            "maxevals" : 2000,
+            "maxevals" : 4000,
             "recombination_prob": 0.9,
             "mutation_gamma": 0.05,
             "migration_frequency_generations": 3,
