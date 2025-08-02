@@ -1,21 +1,24 @@
 from src.simulator.environment import Environment
 from src.optimizer.cma_es import adapted_cma_es
+import json
+
 
 if __name__ == "__main__":
     environment = Environment.from_json_file(
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 18][0]
-    emergency_accesses, fitness_value, history = adapted_cma_es(random_domain)
-    print(fitness_value)
-    print(emergency_accesses)
-    print(history)
-    with open("ql_hustory.txt", "w") as fp:
-        fp.write(str(history))
-    with open("ql_emergency_accesses.txt", "w") as fp:
-        fp.write(
-            f"emergency_accesses={emergency_accesses}, fitness_value={fitness_value}"
-        )
+    best_overall_individual, best_overall_fitness, history, time_to_best = adapted_cma_es(random_domain)
+    
+    
+    data = {
+        "best_overall_individual": best_overall_individual,
+        "best_overall_fitness": best_overall_fitness,
+        "history": history,
+        "time_to_best": time_to_best
+    }
+
+    with open("adapted_cma_es_results.json", "w") as f:
+        json.dump(data, f, indent=4)
 
     print("adapted_cma_es completed!")
-    print(emergency_accesses, fitness_value)
