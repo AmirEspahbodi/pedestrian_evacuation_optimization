@@ -6,7 +6,7 @@ if __name__ == "__main__":
         "dataset/environments/environments_supermarket.json"
     )
     random_domain = [domain for domain in environment.domains if domain.id == 10][0]
-    emergency_accesses, fitness_value, history, time_to_best = evolutionary_algorithm(
+    emergency_accesses, fitness_value, time_to_best, history = evolutionary_algorithm(
         random_domain
     )
     print(f"fitness_value = {fitness_value}")

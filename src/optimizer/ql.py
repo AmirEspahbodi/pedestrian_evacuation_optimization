@@ -100,8 +100,7 @@ def q_learning_exit_optimizer(
         if current_fitness < best_fitness:
             best_fitness = current_fitness
             best_solution = list(current_solution)
-            if time_to_best is None:
-                time_to_best = time.perf_counter() - start_time
+            time_to_best = time.perf_counter() - start_time
 
         max_steps_per_episode = k_exits * 20
 
@@ -166,8 +165,7 @@ def q_learning_exit_optimizer(
             if current_fitness < best_fitness:
                 best_fitness = current_fitness
                 best_solution = list(current_solution)
-                if time_to_best is None:
-                    time_to_best = time.perf_counter() - start_time
+                time_to_best = time.perf_counter() - start_time
                 print(
                     f"Episode {episode + 1}, Step {step + 1}: "
                     f"New best fitness: {best_fitness:.4f} -> {best_solution}"
