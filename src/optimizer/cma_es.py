@@ -60,8 +60,7 @@ def adapted_cma_es(
     # --- History & Timing Tracking ---
     start_time = time.perf_counter()
     time_to_best = None
-    fitness_pop_hist = []
-
+    fitness_pop_hist = {}
     # --- 3. Evolutionary Loop ---
     evaluation_count = 0
     generation = 0
@@ -99,7 +98,7 @@ def adapted_cma_es(
                 break
 
         # Record fitnesses of this population
-        fitness_pop_hist.append(fitness_values.copy())
+        fitness_pop_hist[generation] = fitness_values.copy()
 
         # Sort by fitness
         sorted_indices = np.argsort(fitness_values)
