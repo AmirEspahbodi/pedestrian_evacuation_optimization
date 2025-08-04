@@ -144,6 +144,12 @@ def q_learning_exit_optimizer(
             next_solution = list(current_solution)
             next_solution[idx] = new_pos
             next_fitness = psi_evaluator.evaluate(next_solution)
+
+            if next_fitness < best_fitness:
+                best_fitness = next_fitness
+                best_solution = list(next_solution)
+                time_to_best = time.perf_counter() - start_time
+
             evaluations_count += 1
 
             reward = current_fitness - next_fitness
@@ -171,8 +177,8 @@ def q_learning_exit_optimizer(
                     f"New best fitness: {best_fitness:.4f} -> {best_solution}"
                 )
 
-        # Record the final fitness of this episode
-        history[f"episode-{episode + 1}"].append(float(current_fitness))
+            # Record the final fitness of this episode
+            history[f"episode-{episode + 1}"].append(float(current_fitness))
 
         # Decay exploration rate
         exploration_rate_epsilon = max(
