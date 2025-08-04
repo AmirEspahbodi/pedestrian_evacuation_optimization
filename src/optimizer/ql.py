@@ -102,7 +102,7 @@ def q_learning_exit_optimizer(
             best_solution = list(current_solution)
             time_to_best = time.perf_counter() - start_time
 
-        max_steps_per_episode = k_exits * 20
+        max_steps_per_episode = k_exits * 30
 
         # 2. Inner Loop: steps within one episode
         for step in range(max_steps_per_episode):
