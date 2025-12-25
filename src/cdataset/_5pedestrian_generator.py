@@ -1,4 +1,5 @@
 import sys
+from tkinter.constants import N
 
 import numpy as np
 from PyQt6.QtCore import Qt
@@ -7,10 +8,11 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from scipy.spatial.distance import cdist
 
 # Configuration
-INPUT_FILE = "obstacle_grid_walled_400.txt"
-OUTPUT_FILE = "populated_grid.txt"
+INPUT_FILE = "obstacle_grid_walled_with_access_400.txt"
+OUTPUT_FILE = "finall_grid_400_NUM.txt"
 TARGET_PEDESTRIANS = 100
 CANDIDATES_PER_STEP = 15
+NUM_EVALUATE = 10
 
 # Color Mapping for Visualization (R, G, B)
 COLORS = {
@@ -177,19 +179,22 @@ class GridVisualizer(QMainWindow):
 
 def main():
     # 1. Load Data
-    grid = load_grid(INPUT_FILE)
+    last_populated_grid = None
+    for i in range(0, NUM_EVALUATE):
+        grid = load_grid(INPUT_FILE)
 
-    # 2. Algorithm Execution
-    populated_grid = place_pedestrians(
-        grid, count=TARGET_PEDESTRIANS, k_candidates=CANDIDATES_PER_STEP
-    )
+        # 2. Algorithm Execution
+        populated_grid = place_pedestrians(
+            grid, count=TARGET_PEDESTRIANS, k_candidates=CANDIDATES_PER_STEP
+        )
 
-    # 3. Save Output
-    save_grid(populated_grid, OUTPUT_FILE)
+        # 3. Save Output
+        save_grid(populated_grid, OUTPUT_FILE.replace("NUM", str(i + 1)))
+        last_populated_grid = populated_grid
 
     # 4. Visualization
     app = QApplication(sys.argv)
-    window = GridVisualizer(populated_grid)
+    window = GridVisualizer(last_populated_grid)
     window.show()
     sys.exit(app.exec())
 
