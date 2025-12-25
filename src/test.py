@@ -1,9 +1,12 @@
 import sys
-from .simulator.environment import Environment
-from .simulator.draw import DomainVisualizerWindow
+
 from PyQt6.QtWidgets import QApplication
-from src.simulator.simulation_engine import main as engine_main
+
 from src.optimizer.psi import psi_helper
+from src.simulator.simulation_engine import main as engine_main
+
+from .simulator.draw import DomainVisualizerWindow
+from .simulator.environment import Environment
 
 
 def main():
@@ -15,11 +18,10 @@ def main():
     )
     for domain in environment.domains:
         print(f"id={domain.id}, p={2 * (domain.height + domain.width)}")
-    domain = [domain for domain in environment.domains if domain.id == 18][0]
+    domain = [domain for domain in environment.domains if domain.id == 10][0]
 
     # app = QApplication(sys.argv)
-    e_exits = [(276, 2), (123, 2), (204, 2)]
-
+    e_exits = [(69, 2), (139, 2), (213, 2)]
     domain.add_emergency_accesses(e_exits)
     # Create and show main window
     # window = DomainVisualizerWindow(domain)

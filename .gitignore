@@ -193,3 +193,9 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
+
+old/
+result/
+initial_grid*
+obstacle_grid*
+populated_grid*

@@ -120,7 +120,7 @@ class MemeticAlgorithm:
             and the time to reach the best fitness.
         """
         # Setup
-        self.max_evals = 4000# IEAConfig.islands[0].maxevals
+        self.max_evals = IEAConfig.islands[0].maxevals
         start_time = time.perf_counter()
         history = {f"episode-{i + 1}": [] for i in range(num_episodes)}
 
