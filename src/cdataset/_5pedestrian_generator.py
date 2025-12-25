@@ -10,7 +10,7 @@ from scipy.spatial.distance import cdist
 # Configuration
 INPUT_FILE = "obstacle_grid_walled_with_access_400.txt"
 OUTPUT_FILE = "finall_grid_400_NUM.txt"
-TARGET_PEDESTRIANS = 100
+TARGET_PEDESTRIANS = 200
 CANDIDATES_PER_STEP = 15
 NUM_EVALUATE = 10
 
