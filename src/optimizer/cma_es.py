@@ -4,6 +4,7 @@ from src.config import SimulationConfig, OptimizerStrategy, EAConfig
 from src.optimizer.common import FitnessEvaluator
 from src.simulator.domain import Domain
 
+
 def adapted_cma_es(
     domain: Domain,
 ):
@@ -53,7 +54,7 @@ def adapted_cma_es(
     sigma = 0.3 * (perimeter_length - omega)
 
     # Initialize tracking variables
-    best_fitness = float('inf')
+    best_fitness = float("inf")
     best_solution = None
     last_eigen_eval = 0
     fitness_pop_hist = {}
@@ -110,9 +111,11 @@ def adapted_cma_es(
         )
 
         # Heaviside for sigma update
-        h_sig = (np.linalg.norm(ps) / np.sqrt(
-            1 - (1 - cs) ** (2 * evaluation_count / population_size)
-        ) / k_exits) < (1.4 + 2 / (k_exits + 1))
+        h_sig = (
+            np.linalg.norm(ps)
+            / np.sqrt(1 - (1 - cs) ** (2 * evaluation_count / population_size))
+            / k_exits
+        ) < (1.4 + 2 / (k_exits + 1))
 
         pc = (1 - cc) * pc + h_sig * np.sqrt(cc * (2 - cc) * mueff) * (
             (mean - old_mean) / sigma
@@ -131,7 +134,9 @@ def adapted_cma_es(
         )
 
         # --- 5. Covariance Matrix Decomposition ---
-        if (evaluation_count - last_eigen_eval) > (population_size / (c1 + cmu) / k_exits / 10):
+        if (evaluation_count - last_eigen_eval) > (
+            population_size / (c1 + cmu) / k_exits / 10
+        ):
             C = np.triu(C) + np.triu(C, 1).T
             D_squared, B = np.linalg.eigh(C)
             D = np.sqrt(np.maximum(D_squared, epsilon))

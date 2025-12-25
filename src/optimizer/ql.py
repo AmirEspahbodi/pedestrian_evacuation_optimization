@@ -81,7 +81,7 @@ def q_learning_exit_optimizer(
     }
 
     for episode in range(num_episodes):
-        print(f"start episode: {episode+1}")
+        print(f"start episode: {episode + 1}")
         if evaluations_count >= max_evals:
             print(f"INFO: Maximum evaluations ({max_evals}) reached. Stopping.")
             break

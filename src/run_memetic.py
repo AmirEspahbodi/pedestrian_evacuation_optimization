@@ -22,11 +22,10 @@ if __name__ == "__main__":
         "best_overall_individual": [int(i) for i in best_overall_individual],
         "best_overall_fitness": float(best_overall_fitness),
         "history": history,
-        "time_to_best": time_to_best
+        "time_to_best": time_to_best,
     }
 
     with open("memetic_results.json", "w") as f:
         json.dump(data, f, indent=4)
-
 
     print("MemeticAlgorithm optimizing completed!")
