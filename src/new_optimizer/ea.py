@@ -4,9 +4,8 @@ import time
 from typing import Dict, List, Tuple
 
 import numpy as np
-from src.simulator.domain import Domain
 
-from src.config import EAConfig, OptimizerStrategy, SimulationConfig
+from src.config import EAConfig, SimulationConfig
 
 from .common import FitnessEvaluator, Individual
 
@@ -19,9 +18,7 @@ def _gaussian_perturbation(value: float, gamma: float, perimeter_length: float) 
     return discrete % int(perimeter_length)
 
 
-def _set_based_recombination(
-    p1: List[float], p2: List[float], k_exits: int
-) -> List[float]:
+def _set_based_recombination(p1: List[int], p2: List[int], k_exits: int) -> List[int]:
     combined = set(p1) | set(p2)
     genes = list(combined)
     if len(genes) < k_exits:
@@ -30,7 +27,7 @@ def _set_based_recombination(
 
 
 def _mutate_individual_ea(
-    genes: List[float],
+    genes: List[int],
     gamma: float,
     perimeter_length: float,
     k_exits: int,
@@ -44,30 +41,22 @@ def _binary_tournament_selection(pop: List[Individual]) -> Individual:
     return pop[i] if pop[i].fitness < pop[j].fitness else pop[j]
 
 
-def evolutionary_algorithm(
-    domain: Domain,
-) -> Tuple[List[float], float, float, Dict[int, List[float]]]:
-    """
-    Returns:
-      best_genes:      List of exit positions for best solution
-      best_fitness:     Its fitness value
-      time_to_best:   Seconds elapsed when that best was first discovered
-      history:             Per-generation list of all fitnesses evaluated
-    """
-    # --- Setup ---
-    perimeter = 2 * (domain.width + domain.height)
-    k_exits = SimulationConfig.num_emergency_exits
-    psi = FitnessEvaluator(domain, OptimizerStrategy.EA)
+def ea_algorithm(
+    pedestrian_confs, gird, simulator_config, ea_config
+) -> tuple[List[int], float, float, Dict[str, List[float]]]:
+    perimeter = 2 * (len(gird) + len(gird[0]))
+    k_exits = simulator_config.numEmergencyExits
+    psi = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
 
-    cfg = EAConfig.islands[0]
-    popsize, pr, gamma, maxevals = (
-        cfg.popsize,
-        cfg.recombination_prob,
-        cfg.mutation_gamma,
-        cfg.maxevals,
+    popsize, pr, gamma, _, maxevals = (
+        ea_config.popsize,
+        ea_config.recombination_prob,
+        ea_config.mutation_gamma,
+        ea_config.offspring,
+        ea_config.max_evals,
     )
 
-    history: Dict[int, List[float]] = {}
+    history: Dict[str, List[float]] = {}
 
     # --- Start timer ---
     start_time = time.perf_counter()
@@ -81,12 +70,12 @@ def evolutionary_algorithm(
         population.append(Individual(genes))
 
     # Evaluate gen 0
-    history[0] = []
+    history["0"] = []
     for ind in population:
         if psi.get_evaluation_count() >= maxevals:
             break
         ind.fitness = psi.evaluate(ind.genes)
-        history[0].append(ind.fitness)
+        history["0"].append(ind.fitness)
 
     # Sort & record initial best
     population.sort()
@@ -97,7 +86,7 @@ def evolutionary_algorithm(
     # --- Generations ---
     while psi.get_evaluation_count() < maxevals:
         generation += 1
-        history[generation] = []
+        history[f"{generation}"] = []
         next_pop: List[Individual] = []
 
         # Generate offspring in pairs
@@ -124,7 +113,7 @@ def evolutionary_algorithm(
             o1 = Individual(o1_genes)
             if psi.get_evaluation_count() < maxevals:
                 o1.fitness = psi.evaluate(o1.genes)
-                history[generation].append(o1.fitness)
+                history[f"{generation}"].append(o1.fitness)
             else:
                 o1.fitness = float("inf")
             next_pop.append(o1)
@@ -134,7 +123,7 @@ def evolutionary_algorithm(
                 o2 = Individual(o2_genes)
                 if psi.get_evaluation_count() < maxevals:
                     o2.fitness = psi.evaluate(o2.genes)
-                    history[generation].append(o2.fitness)
+                    history[f"{generation}"].append(o2.fitness)
                 else:
                     o2.fitness = float("inf")
                 next_pop.append(o2)

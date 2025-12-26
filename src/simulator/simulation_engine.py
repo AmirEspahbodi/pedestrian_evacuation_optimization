@@ -12,11 +12,11 @@ from multiprocessing.pool import Pool
 import numpy as np
 
 # import matplotlib.pyplot as plt
-from src.config import SimulationConfig
+
+T_STAR = []
 
 #######################################################
-MAX_STEPS = SimulationConfig.simulator.time_limit
-steps = range(MAX_STEPS)
+
 
 cellSize = 0.4  # m
 vmax = 1.2
@@ -139,7 +139,7 @@ def get_neighbors(cell):
     return neighbors
 
 
-def seq_update_cells(pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse):
+def seq_update_cells(pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse, step):
     """
     sequential update
     input
@@ -207,6 +207,9 @@ def seq_update_cells(pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse):
                 tmp_peds[neighbor] = 1
                 tmp_peds[i, j] = 0
                 dff_diff[i, j] += 1
+                if neighbor in exit_cells:
+                    T_STAR.append(step + 1)
+
                 break
 
     return tmp_peds, dff_diff
@@ -234,7 +237,7 @@ def setup_dir(dir, clean):
     os.makedirs(dir, exist_ok=True)
 
 
-def simulate(args, pedestrian, window):
+def simulate(args, steps, pedestrian, window):
     n, npeds, box, sff, shuffle, reverse, drawP, giveD = args
     # print(
     #     "init %d agents in box=[%d, %d, %d, %d]"
@@ -251,7 +254,7 @@ def simulate(args, pedestrian, window):
         # )
 
         temp_pedestrian, dff_diff = seq_update_cells(
-            pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse
+            pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse, t
         )
         for i in range(len(temp_pedestrian)):
             for j in range(len(temp_pedestrian[i])):
@@ -278,27 +281,29 @@ def simulate(args, pedestrian, window):
         return t
 
 
-def main(gird: list[list[int]], pedestrian, window=None):
-    global kappaS, kappaD, dim_y, dim_x, exit_cells, SFF, alpha, delta, walls, parallel, box, moore
+def main(SimulationConfig, gird: list[list[int]], pedestrian, window=None):
+    global kappaS, kappaD, dim_y, dim_x, exit_cells, SFF, alpha, delta, walls, parallel, box, moore, T_STAR
     # init parameters
 
-    kappaS = SimulationConfig.simulator.cellular_automaton_parameters.kappa_static
-    kappaD = SimulationConfig.simulator.cellular_automaton_parameters.kappa_dynamic
+    MAX_STEPS = SimulationConfig.simulator.timeLimit
+    steps = range(MAX_STEPS)
+    kappaS = SimulationConfig.simulator.cellularAutomatonParameters.kappaStatic
+    kappaD = SimulationConfig.simulator.cellularAutomatonParameters.kappaDynamic
     moore = (
-        SimulationConfig.simulator.cellular_automaton_parameters.neighborhood == "Moore"
+        SimulationConfig.simulator.cellularAutomatonParameters.neighborhood == "Moore"
     )
     nruns = 1
 
-    drawS = SimulationConfig.simulator.cellular_automaton_parameters.plotS
-    drawP = SimulationConfig.simulator.cellular_automaton_parameters.plotP
-    shuffle = SimulationConfig.simulator.cellular_automaton_parameters.shuffle
-    reverse = SimulationConfig.simulator.cellular_automaton_parameters.reverse
-    drawD = SimulationConfig.simulator.cellular_automaton_parameters.plotD
-    drawD_avg = SimulationConfig.simulator.cellular_automaton_parameters.plotAvgD
-    clean_dirs = SimulationConfig.simulator.cellular_automaton_parameters.clean
+    drawS = SimulationConfig.simulator.cellularAutomatonParameters.plotS
+    drawP = SimulationConfig.simulator.cellularAutomatonParameters.plotP
+    shuffle = SimulationConfig.simulator.cellularAutomatonParameters.shuffle
+    reverse = SimulationConfig.simulator.cellularAutomatonParameters.reverse
+    drawD = SimulationConfig.simulator.cellularAutomatonParameters.plotD
+    drawD_avg = SimulationConfig.simulator.cellularAutomatonParameters.plotAvgD
+    clean_dirs = SimulationConfig.simulator.cellularAutomatonParameters.clean
     width = len(gird[0])  # in meters
     height = len(gird)  # in meters
-    parallel = SimulationConfig.simulator.cellular_automaton_parameters.parallel
+    parallel = SimulationConfig.simulator.cellularAutomatonParameters.parallel
 
     if parallel and drawP:
         raise NotImplementedError("cannot plot pedestrians when multiprocessing")
@@ -309,8 +314,8 @@ def main(gird: list[list[int]], pedestrian, window=None):
     # print(" dim_x: ", dim_x, " dim_y: ", dim_y)
     box = [1, dim_x - 2, 1, dim_y - 2]
 
-    alpha = SimulationConfig.simulator.cellular_automaton_parameters.diffusion
-    delta = SimulationConfig.simulator.cellular_automaton_parameters.decay
+    alpha = SimulationConfig.simulator.cellularAutomatonParameters.diffusion
+    delta = SimulationConfig.simulator.cellularAutomatonParameters.decay
 
     npeds = np.sum(pedestrian)
 
@@ -319,7 +324,7 @@ def main(gird: list[list[int]], pedestrian, window=None):
             (x, y)
             for x in range(len(gird))
             for y in range(len(gird[x]))
-            if gird[x][y] == 4
+            if gird[x][y] == 4 or gird[x][y] == 5
         ]
     )
 
@@ -350,6 +355,7 @@ def main(gird: list[list[int]], pedestrian, window=None):
         if drawD_avg or drawD:
             t, dffs = simulate(
                 (n, npeds, box, sff, shuffle, reverse, drawP, drawD_avg or drawD),
+                steps,
                 pedestrian,
                 window,
             )
@@ -357,12 +363,13 @@ def main(gird: list[list[int]], pedestrian, window=None):
         else:
             t = simulate(
                 (n, npeds, box, sff, shuffle, reverse, drawP, drawD_avg or drawD),
+                steps,
                 pedestrian,
                 window,
             )
         tsim += t
         # print("time ", tsim)
-        times.append(t * dt)
+        # times.append(t * dt)
     # if moore:
     #     # print("save moore.npy")
     #     np.save("moore.npy", times)
@@ -395,7 +402,7 @@ def main(gird: list[list[int]], pedestrian, window=None):
         for tm, dff in old_dffs:
             print("t: %3.4d" % tm)
 
-    return times
+    return T_STAR
 
 
 if __name__ == "__main__":

@@ -1,60 +1,43 @@
-from typing import List, Any, Optional
-from pydantic import BaseModel
-from .config_reader import ConfigurationReader
+import json
+from pathlib import Path
+
+from pydantic import BaseModel, Field, ValidationError
 
 
-class TopologyConfig(BaseModel):
-    name: str
-    parameters: List[
-        Any
-    ]  # Parameters can be of mixed types or you might want to make it more specific if known
-
-
-class InitializationConfig(BaseModel):
-    name: str
-
-
-class OperatorConfig(
-    BaseModel
-):  # A general class for operations like selection, replacement, send, receive
-    name: str
-    parameters: Optional[List[str]] = None  # Parameters are optional for some operators
-
-
-class VariationOperatorConfig(BaseModel):
-    name: str
-    parameters: List[str]
-
-
-class MigrationConfig(BaseModel):
-    frequency: int
-    individuals: int
-    send: OperatorConfig
-    receive: OperatorConfig
-
-
-class IslandConfig(BaseModel):
-    numislands: int
-    popsize: int
-    offspring: int
-    maxevals: int
-    recombination_prob: float
-    mutation_gamma: float
-    migration_frequency_generations: int
-    initialization: InitializationConfig
-    selection: OperatorConfig
-    variation: List[VariationOperatorConfig]
-    replacement: OperatorConfig
-    migration: MigrationConfig
-
-
-class ExperimentConfig(BaseModel):
+# 1. Define the Pydantic Model
+class EvolutionaryConfig(BaseModel):
     numruns: int
     seed: int
-    topology: TopologyConfig
-    islands: List[IslandConfig]
+    numislands: int = Field(..., gt=0, description="Number of islands must be positive")
+    popsize: int
+    offspring: int
+    recombination_prob: float = Field(
+        ..., ge=0.0, le=1.0, description="Probability must be between 0 and 1"
+    )
+    mutation_gamma: float
+    migration_frequency_generations: int
 
 
-IEAConfig = ConfigurationReader[ExperimentConfig](
-    "dataset/iea.json", ExperimentConfig
-).load_config()
+def load_iea_config(file_path: str) -> EvolutionaryConfig:
+    """Reads a JSON file and validates it against the EvolutionaryConfig model."""
+    path = Path(file_path)
+
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found at: {path.absolute()}")
+
+    try:
+        # Read the file content
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        # Parse and validate using Pydantic
+        config = EvolutionaryConfig(**data)
+        return config
+
+    except json.JSONDecodeError:
+        print("Error: The file contains invalid JSON.")
+        raise
+    except ValidationError as e:
+        print("Error: Configuration validation failed.")
+        print(e.json())
+        raise

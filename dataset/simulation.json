@@ -1,37 +1,32 @@
 {
-	"numSimulations" : 7,
-    "numEmergencyExits": 3,
-    "omega": 2,
-    "simulator": {
-        "timeLimit": 60,
-        "cellularAutomatonParameters": {
-            "kappaStatic": 2.0,
-            "kappaDynamic": 1.0,
-            "decayProbability": 0.3,
-            "diffusionProbability": 0.1,
-            "numRuns": 1,
-            "enableParallel": false,
-            "neighborhood": "Moore",
-            "diffusion": 0.1 ,
-            "plotS":  false,
-            "plotD": false,
-            "plotAvgD": false,
-            "plotP": false,
-            "shuffle": true,
-            "reverse": false,
-            "log": "log.dat",
-            "decay": 0.3,
-            "clean": false,
-            "parallel": false
-        },
-        "updateStrategy": "sequential",
-        "physicalConstants": {
-            "cellSize": 0.2,
-            "maxVlocity": 70
-        }
+  "numEmergencyExits": 3,
+  "omega": 2,
+  "simulator": {
+    "timeLimit": 60,
+    "cellularAutomatonParameters": {
+      "kappaStatic": 2.0,
+      "kappaDynamic": 1.0,
+      "decayProbability": 0.3,
+      "diffusionProbability": 0.1,
+      "numRuns": 1,
+      "enableParallel": false,
+      "neighborhood": "Moore",
+      "diffusion": 0.1,
+      "plotS": false,
+      "plotD": false,
+      "plotAvgD": false,
+      "plotP": false,
+      "shuffle": true,
+      "reverse": false,
+      "log": "log.dat",
+      "decay": 0.3,
+      "clean": false,
+      "parallel": false
     },
-    "numPedestrians": [
-        350,
-        350
-    ]
+    "updateStrategy": "sequential",
+    "physicalConstants": {
+      "cellSize": 0.2,
+      "maxVlocity": 70
+    }
+  }
 }

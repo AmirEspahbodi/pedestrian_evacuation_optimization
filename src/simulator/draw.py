@@ -14,14 +14,13 @@ class GridWidget(QWidget):
 
         # Color definitions for faster rendering
         self.colors = {
-            0: QColor(240, 240, 240),  # Empty space (Light Gray)
-            2: QColor(100, 149, 237),  # Furniture/Obstacle (Cornflower Blue)
-            3: QColor(
-                50, 205, 50
-            ),  # Exit (Lime Green) - Assuming 3 is exit based on digits provided
-            4: QColor(50, 50, 50),  # Walls (Dark Gray/Black)
+            0: QColor(255, 255, 255),  # 0: White -> empty cell
+            1: QColor(64, 64, 64),  # 1: Dark Gray -> walls
+            2: QColor(139, 69, 19),  # 2: Brown ( SaddleBrown) -> obstacles
+            4: QColor(34, 139, 34),  # 4: Green (ForestGreen) -> original exits
+            5: QColor(255, 0, 0),  # 5: Red -> emergency exits
         }
-        self.pedestrian_color = QColor(220, 20, 60)  # Crimson Red
+        self.pedestrian_color = QColor(0, 75, 140)  # 3: Light Blue (SkyBlue)
 
     def update_pedestrians(self, new_pedestrians_data):
         """

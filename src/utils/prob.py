@@ -1,8 +1,8 @@
-import random
-from typing import List, Tuple, Optional
-from src.simulator.cellular_automata import CellularAutomata
-from src.config import SimulationConfig
 import math
+import random
+from typing import List, Optional, Tuple
+
+from src.config import SimulationConfig
 
 
 def select_by_probability_normalized(
