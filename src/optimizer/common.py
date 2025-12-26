@@ -1,32 +1,35 @@
-from typing import List, Callable
-from src.simulator.domain import Domain
+from typing import List
+
 from .psi import psi as psi_function
-from src.config import OptimizerStrategy
 
 
 class FitnessEvaluator:
-    def __init__(self, domain: Domain, optimizer_strategy: OptimizerStrategy):
-        self.domain = domain
+    def __init__(self, gird, pedestrians_confs, simulator_config):
         self.evaluations: int = 0
-        self.optimizer_strategy: OptimizerStrategy = optimizer_strategy
+        self.pedestrians_confs = pedestrians_confs
+        self.gird = gird
+        self.simulator_config = simulator_config
 
-    def evaluate(self, emergency_accesses: List[float]) -> float:
+    def evaluate(self, emergency_accesses) -> float:
         emergency_accesses = [int(i) for i in emergency_accesses]
-        # print(emergency_accesses)
-        # print(type(emergency_accesses))
         if not emergency_accesses:
             return float("inf")
         self.evaluations += 1
-        print(f"     evaluation cuont={self.evaluations}")
-        return psi_function(self.domain, self.optimizer_strategy, emergency_accesses)
+        fitness_value = psi_function(
+            self.gird, self.pedestrians_confs, emergency_accesses, self.simulator_config
+        )
+        print(
+            f"     evaluation cuont={self.evaluations},     fitness value={fitness_value},     exits={emergency_accesses}"
+        )
+        return fitness_value
 
     def get_evaluation_count(self) -> int:
         return self.evaluations
 
 
 class Individual:
-    def __init__(self, genes: List[float]):
-        self.genes: List[float] = genes
+    def __init__(self, genes: List[int]):
+        self.genes: List[int] = genes
         self.fitness: float = float("inf")
 
     def __lt__(self, other: "Individual") -> bool:

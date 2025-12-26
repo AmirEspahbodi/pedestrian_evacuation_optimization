@@ -1,28 +1,33 @@
-import time
-import numpy as np
+import math
 import random
+import time
+
+import numpy as np
+
 from .common import FitnessEvaluator
-from src.config import SimulationConfig, OptimizerStrategy, IEAConfig
-from src.simulator.domain import Domain
 
 
 class MemeticAlgorithm:
     def __init__(
         self,
-        domain: Domain,
+        pedestrian_confs,
+        gird,
+        simulator_config,
+        iea_config,
         population_size=100,
         crossover_rate=0.8,
         mutation_rate=0.2,
         local_search_rate=0.1,
         local_search_iterations=10,
     ):
-        self.domain = domain
-        self.psi_evaluator = FitnessEvaluator(
-            domain=domain, optimizer_strategy=OptimizerStrategy.IEA
-        )
-        self.k_exits = SimulationConfig.num_emergency_exits
-        self.omega = SimulationConfig.omega
-        self.perimeter_length = 2 * (domain.width + domain.height)
+        self.pedestrian_confs = pedestrian_confs
+        self.gird = gird
+        self.simulator_config = simulator_config
+        self.iea_config = iea_config
+        self.psi_evaluator = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+        self.k_exits = simulator_config.numEmergencyExits
+        self.omega = simulator_config.omega
+        self.perimeter_length = 2 * (len(gird) + len(gird[0]))
         self.max_val_for_element = self.perimeter_length - self.omega
         self.population_size = population_size
         self.crossover_rate = crossover_rate
@@ -120,7 +125,7 @@ class MemeticAlgorithm:
             and the time to reach the best fitness.
         """
         # Setup
-        self.max_evals = IEAConfig.islands[0].maxevals
+        self.max_evals = self.iea_config.max_evals
         start_time = time.perf_counter()
         history = {f"episode-{i + 1}": [] for i in range(num_episodes)}
 
@@ -182,7 +187,5 @@ class MemeticAlgorithm:
                     if ind == indiv:
                         self.population[j] = refined
                         break
-
-            # Record history after local search (final generation)
 
         return best_overall_individual, best_overall_fitness, history, time_to_best

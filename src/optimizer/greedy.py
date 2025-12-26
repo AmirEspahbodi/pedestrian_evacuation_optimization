@@ -1,31 +1,22 @@
-import random
 import math
+import random
 import time
 from typing import List, Tuple
-from src.simulator.domain import Domain
-from src.config import SimulationConfig, OptimizerStrategy
+
+from src.config import SimulationConfig
+
 from .common import FitnessEvaluator
 
 
 def greedy_algorithm(
-    domain: Domain,
+    pedestrian_confs,
+    gird,
+    simulator_config: SimulationConfig,
 ) -> Tuple[List[float], float, float]:
-    """
-    Places emergency exits greedily along the perimeter of `domain`.
-
-    Returns:
-        E_solutions: List of exit positions (floats in [0, perimeter_length)).
-        final_fitness: The fitness of the solution with all exits placed.
-        time_to_best: Time (in seconds) from start until the overall best fitness was first found.
-
-    Edge cases:
-    - If num_emergency_exits == 0, returns immediately with zero time.
-    """
-    # Setup evaluator and parameters
-    psi_evaluator = FitnessEvaluator(domain, OptimizerStrategy.GREEDY)
-    omega_exit_width = SimulationConfig.omega
-    perimeter_length = 2 * (domain.width + domain.height)
-    k_exits = SimulationConfig.num_emergency_exits
+    psi_evaluator = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+    omega_exit_width = simulator_config.omega
+    perimeter_length = 2 * (len(gird) + len(gird[0]))
+    k_exits = simulator_config.numEmergencyExits
 
     # Precompute number of scan points
     eta = math.ceil(perimeter_length / omega_exit_width) if omega_exit_width > 0 else 0
@@ -61,10 +52,6 @@ def greedy_algorithm(
             temp_accesses = E_solutions + [candidate_location]
             current_eval_psi = psi_evaluator.evaluate(temp_accesses)
 
-            print(
-                f"     j={j}, candidate={candidate_location:.3f}, psi={current_eval_psi:.6f}"
-            )
-
             # Track best for this exit
             if current_eval_psi < best_psi_for_this_exit:
                 best_psi_for_this_exit = current_eval_psi
@@ -84,4 +71,4 @@ def greedy_algorithm(
         E_solutions.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
-    return E_solutions, current_fitness, time_of_best
+    return E_solutions, best_overall_fitness, time_of_best

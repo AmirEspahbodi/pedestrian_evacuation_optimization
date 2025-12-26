@@ -1,17 +1,16 @@
 import collections
-import random
-import math
-import time
-import numpy as np
-from typing import List, Tuple, Any, Optional, Dict
-from dataclasses import dataclass
 import heapq
-from src.simulator.domain import Domain
-from src.config import SimulationConfig, OptimizerStrategy, IEAConfig
+import math
+import random
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+
+from src.config import IEAConfig, SimulationConfig
+
 from .common import FitnessEvaluator
-
-
-# --- Helper Functions for Geometric Constraints ---
 
 
 def _are_exits_overlapping(pos1: int, pos2: int, omega: int) -> bool:
@@ -53,7 +52,10 @@ def _generate_initial_state(k: int, max_pos: int, omega: int) -> Optional[List[i
 
 
 def q_learning_exit_optimizer(
-    domain: Domain,
+    pedestrian_confs,
+    gird,
+    simulator_config,
+    iea_config,
     num_episodes: int = 20,
     learning_rate_alpha: float = 0.1,
     discount_factor_gamma: float = 0.9,
@@ -61,11 +63,11 @@ def q_learning_exit_optimizer(
     exploration_decay_rate: float = 0.999,
     min_exploration_rate: float = 0.01,
 ) -> Tuple[Optional[List[int]], float, Dict[str, List[float]], float]:
-    omega = SimulationConfig.omega
-    perimeter_length = 2 * (domain.width + domain.height)
-    k_exits = SimulationConfig.num_emergency_exits
-    psi_evaluator = FitnessEvaluator(domain, OptimizerStrategy.IEA)
-    max_evals: int = IEAConfig.islands[0].maxevals
+    omega = simulator_config.omega
+    perimeter_length = 2 * (len(gird) + len(gird[0]))
+    k_exits = simulator_config.numEmergencyExits
+    psi_evaluator = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+    max_evals: int = iea_config.max_evals
     max_val_for_element = perimeter_length - omega
 
     # Q-table and best‐so‐far
