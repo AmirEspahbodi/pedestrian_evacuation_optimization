@@ -8,6 +8,7 @@ from src.config import load_ea_config, load_iea_config, load_simulation_config
 from src.new_optimizer.ea import ea_algorithm
 from src.new_optimizer.greedy import greedy_algorithm
 from src.new_optimizer.iea import iea_optimizer
+from src.new_optimizer.memetic import MemeticAlgorithm
 
 
 def main():
@@ -92,14 +93,30 @@ def main():
                     pedestrian_confs, clean_gird, simulator_config, iea_config
                 )
             )
-            output_data: dict[str, Any] = {
+            data: dict[str, Any] = {
                 "global_best_individual": global_best_individual,
                 "global_best_fitness": global_best_fitness,
                 "history": history,
                 "time_to_best": time_to_best,
             }
             filename = "results/iea_result.json"
-            store_as_json(output_data, filename)
+            store_as_json(data, filename)
+        elif args.opt == "MEMETIC":
+            iea_config = load_iea_config("dataset/iea.json")
+            memetic_algorithm = MemeticAlgorithm(
+                pedestrian_confs, clean_gird, simulator_config, iea_config
+            )
+            best_overall_individual, best_overall_fitness, history, time_to_best = (
+                memetic_algorithm.run()
+            )
+            data: dict[str, Any] = {
+                "best_overall_individual": best_overall_individual,
+                "best_overall_fitness": best_overall_fitness,
+                "history": history,
+                "time_to_best": time_to_best,
+            }
+            filename = "results/memetic_result.json"
+            store_as_json(data, filename)
 
 
 if __name__ == "__main__":
