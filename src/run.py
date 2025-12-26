@@ -9,6 +9,7 @@ from src.new_optimizer.ea import ea_algorithm
 from src.new_optimizer.greedy import greedy_algorithm
 from src.new_optimizer.iea import iea_optimizer
 from src.new_optimizer.memetic import MemeticAlgorithm
+from src.new_optimizer.ql import q_learning_exit_optimizer
 
 
 def main():
@@ -116,6 +117,21 @@ def main():
                 "time_to_best": time_to_best,
             }
             filename = "results/memetic_result.json"
+            store_as_json(data, filename)
+        elif args.opt == "QL":
+            iea_config = load_iea_config("dataset/iea.json")
+            best_solution, best_fitness, history, time_to_best = (
+                q_learning_exit_optimizer(
+                    pedestrian_confs, clean_gird, simulator_config, iea_config
+                )
+            )
+            data: dict[str, Any] = {
+                "best_solution": best_solution,
+                "best_fitness": best_fitness,
+                "history": history,
+                "time_to_best": time_to_best,
+            }
+            filename = "results/ql_result.json"
             store_as_json(data, filename)
 
 
