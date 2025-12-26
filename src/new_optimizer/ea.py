@@ -1,11 +1,9 @@
 import math
 import random
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
-
-from src.config import EAConfig, SimulationConfig
 
 from .common import FitnessEvaluator, Individual
 

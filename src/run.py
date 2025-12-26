@@ -1,11 +1,13 @@
 import argparse
 import json
-import sys
 
 import numpy as np
+from typing_extensions import Any
 
 from src.config import load_ea_config, load_iea_config, load_simulation_config
 from src.new_optimizer.ea import ea_algorithm
+from src.new_optimizer.greedy import greedy_algorithm
+from src.new_optimizer.iea import iea_optimizer
 
 
 def main():
@@ -47,6 +49,18 @@ def main():
             )
             pedestrian_confs.append(pedestrian)
 
+        def store_as_json(data, filename):
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+                    print(f"Successfully saved results to {filename}")
+            except IOError as e:
+                print(f"Error writing to file {filename}: {e}")
+            except TypeError as e:
+                print(
+                    f"Serialization Error: Ensure all data types are JSON compatible. {e}"
+                )
+
         if args.opt == "EA":
             ea_config = load_ea_config("dataset/ea.json")
             best_overall_genes, best_overall_fitness, time_to_best, history = (
@@ -59,18 +73,33 @@ def main():
                 "history": history,
             }
             filename = "results/ea_result.json"
-            try:
-                with open(filename, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=4)
-                    print(f"Successfully saved results to {filename}")
-            except IOError as e:
-                print(f"Error writing to file {filename}: {e}")
-            except TypeError as e:
-                print(
-                    f"Serialization Error: Ensure all data types are JSON compatible. {e}"
-                )
+            store_as_json(data, filename)
+        elif args.opt == "GREEDY":
+            e_solutions, best_overall_fitness, time_of_best = greedy_algorithm(
+                pedestrian_confs, clean_gird, simulator_config
+            )
+            data = {
+                "e_solutions": e_solutions,
+                "best_overall_fitness": best_overall_fitness,
+                "time_of_best": time_of_best,
+            }
+            filename = "results/greedy_result.json"
+            store_as_json(data, filename)
         elif args.opt == "IEA":
-            optimizer_config = load_iea_config("dataset/iea.json")
+            iea_config = load_iea_config("dataset/iea.json")
+            global_best_individual, global_best_fitness, history, time_to_best = (
+                iea_optimizer(
+                    pedestrian_confs, clean_gird, simulator_config, iea_config
+                )
+            )
+            output_data: dict[str, Any] = {
+                "global_best_individual": global_best_individual,
+                "global_best_fitness": global_best_fitness,
+                "history": history,
+                "time_to_best": time_to_best,
+            }
+            filename = "results/iea_result.json"
+            store_as_json(output_data, filename)
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ class FitnessEvaluator:
             self.gird, self.pedestrians_confs, emergency_accesses, self.simulator_config
         )
         print(
-            f"     evaluation cuont={self.evaluations},     fitness value={fitness_value}"
+            f"     evaluation cuont={self.evaluations},     fitness value={fitness_value},     exits={emergency_accesses}"
         )
         return fitness_value
 

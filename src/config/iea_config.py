@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 
 # 1. Define the Pydantic Model
-class EvolutionaryConfig(BaseModel):
+class IEAConfig(BaseModel):
     numruns: int
     seed: int
     numislands: int = Field(..., gt=0, description="Number of islands must be positive")
@@ -16,9 +16,10 @@ class EvolutionaryConfig(BaseModel):
     )
     mutation_gamma: float
     migration_frequency_generations: int
+    max_evals: int
 
 
-def load_iea_config(file_path: str) -> EvolutionaryConfig:
+def load_iea_config(file_path: str) -> IEAConfig:
     """Reads a JSON file and validates it against the EvolutionaryConfig model."""
     path = Path(file_path)
 
@@ -31,7 +32,7 @@ def load_iea_config(file_path: str) -> EvolutionaryConfig:
             data = json.load(f)
 
         # Parse and validate using Pydantic
-        config = EvolutionaryConfig(**data)
+        config = IEAConfig(**data)
         return config
 
     except json.JSONDecodeError:

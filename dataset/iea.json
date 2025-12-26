@@ -1,4 +1,5 @@
 {
+  "max_evals": 2000,
   "numruns": 10,
   "seed": 1,
   "numislands": 4,

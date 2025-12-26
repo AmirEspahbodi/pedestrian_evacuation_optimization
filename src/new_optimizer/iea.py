@@ -3,8 +3,6 @@ import random
 import time
 from typing import Any, Dict, List, Tuple
 
-from src.config import IEAConfig, OptimizerStrategy, SimulationConfig
-
 from .common import FitnessEvaluator
 
 Individual = List[int]  # Changed to int for discrete environment
@@ -41,8 +39,11 @@ def tournament_selection(population: Population, fitnesses: List[float]) -> Indi
 # --- Main iEA Optimizer with Timing ---
 
 
-def iEA_optimizer(
-    domain: Domain,
+def iea_optimizer(
+    pedestrian_confs,
+    gird,
+    simulator_config,
+    iea_config,
 ) -> Tuple[Individual, float, Dict[str, Any], float]:
     """
     Runs the island-based EA, returns:
@@ -54,18 +55,22 @@ def iEA_optimizer(
     start_time = time.perf_counter()
 
     # Algorithm parameters
-    perimeter_length = 2 * (domain.width + domain.height)
-    k_exits = SimulationConfig.num_emergency_exits
-    max_evals: int = IEAConfig.islands[0].maxevals
-    num_islands = 4
-    pop_size = 25
-    migration_freq = IEAConfig.islands[0].migration_frequency_generations
-    p_recomb = 0.9
+    perimeter_length = 2 * (len(gird) + len(gird[0]))
+    k_exits = simulator_config.numEmergencyExits
     p_mut = 1.0
-    gamma = 0.05
+
+    evalr = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+
+    gamma, p_recomb, pop_size, num_islands, max_evals, migration_freq = (
+        iea_config.mutation_gamma,
+        iea_config.recombination_prob,
+        iea_config.popsize,
+        iea_config.numislands,
+        iea_config.max_evals,
+        iea_config.migration_frequency_generations,
+    )
 
     # Prepare evaluator and storage
-    evalr = FitnessEvaluator(domain=domain, optimizer_strategy=OptimizerStrategy.IEA)
     generation = 0
     history: Dict[str, Dict[str, List[float]]] = {
         f"island{i + 1}": {} for i in range(num_islands)
