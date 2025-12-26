@@ -5,11 +5,11 @@ import numpy as np
 from typing_extensions import Any
 
 from src.config import load_ea_config, load_iea_config, load_simulation_config
-from src.new_optimizer.ea import ea_algorithm
-from src.new_optimizer.greedy import greedy_algorithm
-from src.new_optimizer.iea import iea_optimizer
-from src.new_optimizer.memetic import MemeticAlgorithm
-from src.new_optimizer.ql import q_learning_exit_optimizer
+from src.optimizer.ea import ea_algorithm
+from src.optimizer.greedy import greedy_algorithm
+from src.optimizer.iea import iea_optimizer
+from src.optimizer.memetic import MemeticAlgorithm
+from src.optimizer.ql import q_learning_exit_optimizer
 
 
 def main():
