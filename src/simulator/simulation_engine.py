@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
+import argparse
+import itertools as it  # for cartesian product
+import logging
+import os
+import random
+import time
 from functools import lru_cache
 from multiprocessing.pool import Pool
-import itertools as it  # for cartesian product
-import time
-import random
-import os
-import logging
-import argparse
-import numpy as np
-# import matplotlib.pyplot as plt
 
+import numpy as np
+
+# import matplotlib.pyplot as plt
 from src.config import SimulationConfig
-from .domain import Domain
 
 #######################################################
 MAX_STEPS = SimulationConfig.simulator.time_limit
@@ -21,11 +21,6 @@ steps = range(MAX_STEPS)
 cellSize = 0.4  # m
 vmax = 1.2
 dt = cellSize / vmax  # time step
-
-from_x, to_x = 1, 63  # todo parse this too
-from_y, to_y = 1, 63  # todo parse this too
-DEFAULT_BOX = [from_x, to_x, from_y, to_y]
-del from_x, to_x, from_y, to_y
 
 
 # DFF = np.ones( (dim_x, dim_y) ) # dynamic floor field
@@ -144,7 +139,7 @@ def get_neighbors(cell):
     return neighbors
 
 
-def seq_update_cells(domain, sff, dff, kappaD, kappaS, shuffle, reverse):
+def seq_update_cells(pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse):
     """
     sequential update
     input
@@ -159,8 +154,8 @@ def seq_update_cells(domain, sff, dff, kappaD, kappaS, shuffle, reverse):
        - new domain.peds
     """
 
-    tmp_peds = np.empty_like(domain.peds)  # temporary cells
-    np.copyto(tmp_peds, domain.peds)
+    tmp_peds = np.empty_like(pedestrian)
+    np.copyto(tmp_peds, pedestrian)
 
     dff_diff = np.zeros((dim_x, dim_y))
 
@@ -171,7 +166,7 @@ def seq_update_cells(domain, sff, dff, kappaD, kappaS, shuffle, reverse):
         grid.reverse()
 
     for i, j in grid:  # walk through all cells in geometry
-        if domain.peds[i, j] == 0:
+        if pedestrian[i, j] == 0:
             continue
 
         if (i, j) in exit_cells:
@@ -212,8 +207,6 @@ def seq_update_cells(domain, sff, dff, kappaD, kappaS, shuffle, reverse):
                 tmp_peds[neighbor] = 1
                 tmp_peds[i, j] = 0
                 dff_diff[i, j] += 1
-
-                domain.move_ped(cell, neighbor)
                 break
 
     return tmp_peds, dff_diff
@@ -241,7 +234,7 @@ def setup_dir(dir, clean):
     os.makedirs(dir, exist_ok=True)
 
 
-def simulate(args, domain, window):
+def simulate(args, pedestrian, window):
     n, npeds, box, sff, shuffle, reverse, drawP, giveD = args
     # print(
     #     "init %d agents in box=[%d, %d, %d, %d]"
@@ -252,27 +245,28 @@ def simulate(args, domain, window):
 
     old_dffs = []
     for t in steps:  # simulation loop
-        if window:
-            window.updateGrid()
-            time.sleep(0.3)
         # print(
         #     "\tn: %3d ----  t: %3d |  N: %3d"
         #     % (n, t, int(domain.get_left_pedestrians_count()))
         # )
 
-        domain.peds, dff_diff = seq_update_cells(
-            domain, sff, dff, kappaD, kappaS, shuffle, reverse
+        temp_pedestrian, dff_diff = seq_update_cells(
+            pedestrian, sff, dff, kappaD, kappaS, shuffle, reverse
         )
+        for i in range(len(temp_pedestrian)):
+            for j in range(len(temp_pedestrian[i])):
+                pedestrian[i, j] = temp_pedestrian[i, j]
+
+        if window:
+            window.grid_viewer.update_pedestrians(pedestrian)
+            print("gird updated")
+            time.sleep(0.3)
 
         update_DFF(dff, dff_diff)
         if giveD:
             old_dffs.append((t, dff.copy()))
 
-        domain.increase_pedestrians_t_star()
-
-        if (
-            domain.get_left_pedestrians_count() == 0
-        ):  # is everybody out? TODO: check this. Some bug is lurking here
+        if np.all(pedestrian == 0):
             print("Quite simulation")
             break
     # else:
@@ -284,27 +278,16 @@ def simulate(args, domain, window):
         return t
 
 
-def check_box(box):
-    """
-    exit if box is not well defined
-    """
-    assert box[0] < box[1], "from_x smaller than to_x"
-    assert box[2] < box[3], "from_y smaller than to_y"
-
-
-def main(domain: Domain, window=None):
+def main(gird: list[list[int]], pedestrian, window=None):
     global kappaS, kappaD, dim_y, dim_x, exit_cells, SFF, alpha, delta, walls, parallel, box, moore
     # init parameters
 
     kappaS = SimulationConfig.simulator.cellular_automaton_parameters.kappa_static
     kappaD = SimulationConfig.simulator.cellular_automaton_parameters.kappa_dynamic
-    npeds = random.uniform(
-        SimulationConfig.num_pedestrians[0], SimulationConfig.num_pedestrians[1]
-    )
     moore = (
         SimulationConfig.simulator.cellular_automaton_parameters.neighborhood == "Moore"
     )
-    nruns = SimulationConfig.simulator.cellular_automaton_parameters.num_runs
+    nruns = 1
 
     drawS = SimulationConfig.simulator.cellular_automaton_parameters.plotS
     drawP = SimulationConfig.simulator.cellular_automaton_parameters.plotP
@@ -313,11 +296,9 @@ def main(domain: Domain, window=None):
     drawD = SimulationConfig.simulator.cellular_automaton_parameters.plotD
     drawD_avg = SimulationConfig.simulator.cellular_automaton_parameters.plotAvgD
     clean_dirs = SimulationConfig.simulator.cellular_automaton_parameters.clean
-    width = domain.width  # in meters
-    height = domain.height  # in meters
+    width = len(gird[0])  # in meters
+    height = len(gird)  # in meters
     parallel = SimulationConfig.simulator.cellular_automaton_parameters.parallel
-    box = DEFAULT_BOX
-    check_box(box)
 
     if parallel and drawP:
         raise NotImplementedError("cannot plot pedestrians when multiprocessing")
@@ -326,18 +307,30 @@ def main(domain: Domain, window=None):
     dim_y = height  # number of columns, add ghost cells
     dim_x = width  # number of rows, add ghost cells
     # print(" dim_x: ", dim_x, " dim_y: ", dim_y)
-    if box == DEFAULT_BOX:
-        # print("box == room")
-        box = [1, dim_x - 2, 1, dim_y - 2]
+    box = [1, dim_x - 2, 1, dim_y - 2]
 
     alpha = SimulationConfig.simulator.cellular_automaton_parameters.diffusion
     delta = SimulationConfig.simulator.cellular_automaton_parameters.decay
 
-    exit_cells = frozenset(domain.get_exit_cells())
+    npeds = np.sum(pedestrian)
 
-    npeds = check_N_pedestrians(box, npeds)
+    exit_cells = frozenset(
+        [
+            (x, y)
+            for x in range(len(gird))
+            for y in range(len(gird[x]))
+            if gird[x][y] == 4
+        ]
+    )
 
-    walls = domain.walls
+    walls = np.zeros((dim_y, dim_x), int)
+    for x in range(len(gird)):
+        for y in range(len(gird[x])):
+            if gird[x][y] == 1 or gird[x][y] == 2:
+                walls[x, y] = -1
+
+    for e in exit_cells:
+        walls[e] = 1
 
     sff = init_SFF(exit_cells, dim_x, dim_y, drawS)
 
@@ -357,14 +350,14 @@ def main(domain: Domain, window=None):
         if drawD_avg or drawD:
             t, dffs = simulate(
                 (n, npeds, box, sff, shuffle, reverse, drawP, drawD_avg or drawD),
-                domain,
+                pedestrian,
                 window,
             )
             old_dffs += dffs
         else:
             t = simulate(
                 (n, npeds, box, sff, shuffle, reverse, drawP, drawD_avg or drawD),
-                domain,
+                pedestrian,
                 window,
             )
         tsim += t

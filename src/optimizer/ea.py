@@ -1,10 +1,13 @@
-import random
 import math
+import random
 import time
+from typing import Dict, List, Tuple
+
 import numpy as np
-from typing import List, Tuple, Dict
 from src.simulator.domain import Domain
-from src.config import SimulationConfig, OptimizerStrategy, EAConfig
+
+from src.config import EAConfig, OptimizerStrategy, SimulationConfig
+
 from .common import FitnessEvaluator, Individual
 
 
@@ -46,10 +49,10 @@ def evolutionary_algorithm(
 ) -> Tuple[List[float], float, float, Dict[int, List[float]]]:
     """
     Returns:
-      best_genes:     List of exit positions for best solution
-      best_fitness:   Its fitness value
+      best_genes:      List of exit positions for best solution
+      best_fitness:     Its fitness value
       time_to_best:   Seconds elapsed when that best was first discovered
-      history:        Per-generation list of all fitnesses evaluated
+      history:             Per-generation list of all fitnesses evaluated
     """
     # --- Setup ---
     perimeter = 2 * (domain.width + domain.height)

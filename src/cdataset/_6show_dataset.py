@@ -104,7 +104,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Name of your file
-    FILE_NAME = "finall_grid_400_1.txt"
+    FILE_NAME = "dataset/p400/finall_grid_400_1.txt"
 
     # Create and show window
     # scale=5 means 1 grid cell will be a 5x5 pixel square on screen
