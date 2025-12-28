@@ -12,6 +12,12 @@ from src.optimizer._4ql import q_learning_exit_optimizer
 from src.optimizer._5cma_es_margin_gemini import (
     run_cma_es_optimization as run_cma_es_optimization_gemini,
 )
+from src.optimizer._5cma_es_margin_gpt import (
+    run_cma_es_optimization as run_cma_es_optimization_gpt1,
+)
+from src.optimizer._5cma_es_margin_gpt2 import (
+    run_cma_es_optimization as run_cma_es_optimization_gpt2,
+)
 from src.optimizer.memetic import MemeticAlgorithm
 
 
@@ -21,7 +27,16 @@ def main():
         "--opt",
         type=str,
         required=True,
-        choices=["EA", "IEA", "GREEDY", "QL", "MEMETIC", "CMA-ES-GE", "CMA-ES"],
+        choices=[
+            "EA",
+            "IEA",
+            "GREEDY",
+            "QL",
+            "MEMETIC",
+            "CMA-ES-GE",
+            "CMA-ES-GP1",
+            "CMA-ES-GP2",
+        ],
         help="The optimization method (EA, IEA, GREEDY, QL, MEMETIC)",
     )
     args = parser.parse_args()
@@ -136,9 +151,19 @@ def main():
             }
             filename = "results/ql_result.json"
             store_as_json(data, filename)
-        elif args.opt == "CMA-ES":
+        elif args.opt == "CMA-ES-GE":
             iea_config = load_iea_config("dataset/iea.json")
             run_cma_es_optimization_gemini(
+                clean_gird, pedestrian_confs, simulator_config, iea_config
+            )
+        elif args.opt == "CMA-ES-GP1":
+            iea_config = load_iea_config("dataset/iea.json")
+            run_cma_es_optimization_gpt1(
+                clean_gird, pedestrian_confs, simulator_config, iea_config
+            )
+        elif args.opt == "CMA-ES-GP2":
+            iea_config = load_iea_config("dataset/iea.json")
+            run_cma_es_optimization_gpt2(
                 clean_gird, pedestrian_confs, simulator_config, iea_config
             )
 
