@@ -9,17 +9,8 @@ from src.optimizer._01ea import ea_algorithm
 from src.optimizer._02greedy import greedy_algorithm
 from src.optimizer._03iea import iea_optimizer
 from src.optimizer._04ql import q_learning_exit_optimizer
-from src.optimizer._05cma_es_margin_gemini import (
-    run_cma_es_optimization as run_cma_es_optimization_gemini,
-)
-from src.optimizer._05cma_es_margin_gpt import (
-    run_cma_es_optimization as run_cma_es_optimization_gpt1,
-)
-from src.optimizer._05cma_es_margin_gpt2 import (
-    run_cma_es_optimization as run_cma_es_optimization_gpt2,
-)
-from src.optimizer._05cma_es_pip import (
-    run_cma_es_optimization as run_cma_es_optimization_pip,
+from src.optimizer._05cma_es_ma import (
+    run_cma_es_optimization as run_cma_es_ma_optimization,
 )
 from src.optimizer._06GWO import integer_enhanced_gwo
 from src.optimizer._07misc import GAConfig, MISOConfig, MISOIntegerOptimizer
@@ -38,10 +29,7 @@ def main():
             "GREEDY",
             "QL",
             "MEMETIC",
-            "CMA-ES-GE",
-            "CMA-ES-GP1",
-            "CMA-ES-GP2",
-            "CMA-ES-PIP",
+            "CMA-ES-MA",
             "GWO",
             "MISC",
         ],
@@ -159,24 +147,9 @@ def main():
             }
             filename = "results/ql_result.json"
             store_as_json(data, filename)
-        elif args.opt == "CMA-ES-GE":
+        elif args.opt == "CMA-ES-MA":
             iea_config = load_iea_config("dataset/iea.json")
-            run_cma_es_optimization_gemini(
-                clean_gird, pedestrian_confs, simulator_config, iea_config
-            )
-        elif args.opt == "CMA-ES-GP1":
-            iea_config = load_iea_config("dataset/iea.json")
-            run_cma_es_optimization_gpt1(
-                clean_gird, pedestrian_confs, simulator_config, iea_config
-            )
-        elif args.opt == "CMA-ES-GP2":
-            iea_config = load_iea_config("dataset/iea.json")
-            run_cma_es_optimization_gpt2(
-                clean_gird, pedestrian_confs, simulator_config, iea_config
-            )
-        elif args.opt == "CMA-ES-PIP":
-            iea_config = load_iea_config("dataset/iea.json")
-            run_cma_es_optimization_pip(
+            run_cma_es_ma_optimization(
                 clean_gird, pedestrian_confs, simulator_config, iea_config
             )
         elif args.opt == "GWO":
