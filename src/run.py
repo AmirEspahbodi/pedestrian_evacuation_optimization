@@ -18,7 +18,9 @@ from src.optimizer._5cma_es_margin_gpt import (
 from src.optimizer._5cma_es_margin_gpt2 import (
     run_cma_es_optimization as run_cma_es_optimization_gpt2,
 )
-from src.optimizer.memetic import MemeticAlgorithm
+from src.optimizer._6GWO import integer_enhanced_gwo
+from src.optimizer._7misc import GAConfig, MISOConfig, MISOIntegerOptimizer
+from src.optimizer._8memetic import MemeticAlgorithm
 
 
 def main():
@@ -36,6 +38,8 @@ def main():
             "CMA-ES-GE",
             "CMA-ES-GP1",
             "CMA-ES-GP2",
+            "GWO",
+            "MISC",
         ],
         help="The optimization method (EA, IEA, GREEDY, QL, MEMETIC)",
     )
@@ -166,6 +170,43 @@ def main():
             run_cma_es_optimization_gpt2(
                 clean_gird, pedestrian_confs, simulator_config, iea_config
             )
+        elif args.opt == "GWO":
+            blocked = {}
+            iea_config = load_iea_config("dataset/iea.json")
+
+            def valid(x: np.ndarray) -> bool:
+                return all(int(v) not in blocked for v in x)
+
+            res = integer_enhanced_gwo(
+                clean_gird,
+                pedestrian_confs,
+                simulator_config,
+                iea_config,
+                valid_fn=valid,
+            )
+            print("best_x:", res.best_x, "best_f:", res.best_f, "evals:", res.n_evals)
+        elif args.opt == "MISC":
+            iea_config = load_iea_config("dataset/iea.json")
+
+            def is_valid(x: np.ndarray) -> bool:
+                return True
+
+            opt = MISOIntegerOptimizer(
+                clean_gird,
+                pedestrian_confs,
+                simulator_config,
+                iea_config,
+                config=MISOConfig(nmax=250, enable_local_search=True),
+                ga_config=GAConfig(pop_size=70, generations=70),
+                seed=123,
+                is_valid_fn=is_valid,
+                repair_fn=None,
+            )
+
+            result = opt.optimize()
+            print("best_x =", result["best_x"])
+            print("best_f =", result["best_f"])
+            print("evaluations =", result["evaluations"])
 
 
 if __name__ == "__main__":
