@@ -5,25 +5,25 @@ import numpy as np
 from typing_extensions import Any
 
 from src.config import load_ea_config, load_iea_config, load_simulation_config
-from src.optimizer._1ea import ea_algorithm
-from src.optimizer._2greedy import greedy_algorithm
-from src.optimizer._3iea import iea_optimizer
-from src.optimizer._4ql import q_learning_exit_optimizer
-from src.optimizer._5cma_es_margin_gemini import (
+from src.optimizer._01ea import ea_algorithm
+from src.optimizer._02greedy import greedy_algorithm
+from src.optimizer._03iea import iea_optimizer
+from src.optimizer._04ql import q_learning_exit_optimizer
+from src.optimizer._05cma_es_margin_gemini import (
     run_cma_es_optimization as run_cma_es_optimization_gemini,
 )
-from src.optimizer._5cma_es_margin_gpt import (
+from src.optimizer._05cma_es_margin_gpt import (
     run_cma_es_optimization as run_cma_es_optimization_gpt1,
 )
-from src.optimizer._5cma_es_margin_gpt2 import (
+from src.optimizer._05cma_es_margin_gpt2 import (
     run_cma_es_optimization as run_cma_es_optimization_gpt2,
 )
-from src.optimizer._5cma_es_pip import (
+from src.optimizer._05cma_es_pip import (
     run_cma_es_optimization as run_cma_es_optimization_pip,
 )
-from src.optimizer._6GWO import integer_enhanced_gwo
-from src.optimizer._7misc import GAConfig, MISOConfig, MISOIntegerOptimizer
-from src.optimizer._8memetic import MemeticAlgorithm
+from src.optimizer._06GWO import integer_enhanced_gwo
+from src.optimizer._07misc import GAConfig, MISOConfig, MISOIntegerOptimizer
+from src.optimizer._08memetic import MemeticAlgorithm
 
 
 def main():
