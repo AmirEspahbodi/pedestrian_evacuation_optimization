@@ -5,10 +5,8 @@ from typing import Any, Dict, List, Tuple
 
 from .common import FitnessEvaluator
 
-Individual = List[int]  # Changed to int for discrete environment
+Individual = List[int]
 Population = List[Individual]
-
-# --- Core Algorithm Components ---
 
 
 def set_based_recombination(parent1: Individual, parent2: Individual) -> Individual:
@@ -45,13 +43,6 @@ def iea_optimizer(
     simulator_config,
     iea_config,
 ) -> Tuple[Individual, float, Dict[str, Any], float]:
-    """
-    Runs the island-based EA, returns:
-      - global_best_individual
-      - global_best_fitness
-      - history of fitnesses per island and generation
-      - timestamp when global best was first found
-    """
     start_time = time.perf_counter()
 
     # Algorithm parameters

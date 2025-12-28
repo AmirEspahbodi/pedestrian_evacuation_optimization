@@ -9,6 +9,9 @@ from src.optimizer._1ea import ea_algorithm
 from src.optimizer._2greedy import greedy_algorithm
 from src.optimizer._3iea import iea_optimizer
 from src.optimizer._4ql import q_learning_exit_optimizer
+from src.optimizer._5cma_es_margin_gemini import (
+    run_cma_es_optimization as run_cma_es_optimization_gemini,
+)
 from src.optimizer.memetic import MemeticAlgorithm
 
 
@@ -18,7 +21,7 @@ def main():
         "--opt",
         type=str,
         required=True,
-        choices=["EA", "IEA", "GREEDY", "QL", "MEMETIC"],
+        choices=["EA", "IEA", "GREEDY", "QL", "MEMETIC", "CMA-ES-GE", "CMA-ES"],
         help="The optimization method (EA, IEA, GREEDY, QL, MEMETIC)",
     )
     args = parser.parse_args()
@@ -133,6 +136,11 @@ def main():
             }
             filename = "results/ql_result.json"
             store_as_json(data, filename)
+        elif args.opt == "CMA-ES":
+            iea_config = load_iea_config("dataset/iea.json")
+            run_cma_es_optimization_gemini(
+                clean_gird, pedestrian_confs, simulator_config, iea_config
+            )
 
 
 if __name__ == "__main__":
