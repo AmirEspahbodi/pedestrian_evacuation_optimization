@@ -18,6 +18,9 @@ from src.optimizer._5cma_es_margin_gpt import (
 from src.optimizer._5cma_es_margin_gpt2 import (
     run_cma_es_optimization as run_cma_es_optimization_gpt2,
 )
+from src.optimizer._5cma_es_pip import (
+    run_cma_es_optimization as run_cma_es_optimization_pip,
+)
 from src.optimizer._6GWO import integer_enhanced_gwo
 from src.optimizer._7misc import GAConfig, MISOConfig, MISOIntegerOptimizer
 from src.optimizer._8memetic import MemeticAlgorithm
@@ -38,6 +41,7 @@ def main():
             "CMA-ES-GE",
             "CMA-ES-GP1",
             "CMA-ES-GP2",
+            "CMA-ES-PIP",
             "GWO",
             "MISC",
         ],
@@ -168,6 +172,11 @@ def main():
         elif args.opt == "CMA-ES-GP2":
             iea_config = load_iea_config("dataset/iea.json")
             run_cma_es_optimization_gpt2(
+                clean_gird, pedestrian_confs, simulator_config, iea_config
+            )
+        elif args.opt == "CMA-ES-PIP":
+            iea_config = load_iea_config("dataset/iea.json")
+            run_cma_es_optimization_pip(
                 clean_gird, pedestrian_confs, simulator_config, iea_config
             )
         elif args.opt == "GWO":
