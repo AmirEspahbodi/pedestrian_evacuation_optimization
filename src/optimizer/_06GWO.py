@@ -12,18 +12,6 @@ ArrayLikeInt = Union[np.ndarray, Sequence[int]]
 Bounds = Union[Tuple[int, int], Sequence[Tuple[int, int]]]
 
 
-@dataclass
-class GWOResult:
-    best_x: np.ndarray
-    best_f: float
-    n_evals: int
-    history_best: List[float]
-    history_alpha: List[float]
-    # --- New Fields ---
-    history_pop: Dict[str, List[float]]  # History of all fitness values per gen
-    discovery_time: float  # Time (s) when best_f was found
-
-
 def integer_enhanced_gwo(
     gird,
     pedestrian_confs,
@@ -47,9 +35,9 @@ def integer_enhanced_gwo(
     epd_period: int = 5,
     restart_on_stall: bool = True,
     stall_patience: int = 15,
-    local_search_steps: int = 6,
+    local_search_steps: int = 15,
     verbose: bool = False,
-) -> GWOResult:
+):
     """
     Integer / constraint-aware Enhanced Grey Wolf Optimizer (IE-GWO).
     """
@@ -60,7 +48,7 @@ def integer_enhanced_gwo(
     fitness_fn = FitnessEvaluator(gird, pedestrian_confs, simulator_config).evaluate
     dim = simulator_config.numEmergencyExits
     bounds = (0, 2 * (len(gird) + len(gird[0])))
-    max_evals = iea_config.max_evals
+    max_evals = 1310
 
     if dim <= 0:
         raise ValueError("dim must be positive.")
@@ -409,13 +397,12 @@ def integer_enhanced_gwo(
                 print(f"[stop] eval budget reached: {n_evals}/{max_evals}")
             break
 
-    return GWOResult(
-        best_x=best_x.astype(int),
-        best_f=float(best_f),
-        n_evals=int(n_evals),
-        history_best=history_best,
-        history_alpha=history_alpha,
-        # --- Return New Fields ---
-        history_pop=history_pop,
-        discovery_time=best_found_time,
-    )
+    return {
+        "best_x": best_x.astype(int).tolist(),
+        "best_f": float(best_f),
+        "n_evals": int(n_evals),
+        "history_best": history_best,
+        "history_alpha": history_alpha,
+        "history_pop": history_pop,
+        "discovery_time": best_found_time,
+    }

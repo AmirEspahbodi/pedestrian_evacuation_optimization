@@ -176,14 +176,32 @@ def main():
         def valid(x: np.ndarray) -> bool:
             return all(int(v) not in blocked for v in x)
 
-        res = integer_enhanced_gwo(
+        (
+            best_x,
+            best_f,
+            n_evals,
+            history_best,
+            history_alpha,
+            history_pop,
+            best_found_time,
+        ) = integer_enhanced_gwo(
             clean_gird,
             pedestrian_confs,
             simulator_config,
             iea_config,
             valid_fn=valid,
         )
-        print("best_x:", res.best_x, "best_f:", res.best_f, "evals:", res.n_evals)
+        data = {
+            "best_x": best_x,
+            "best_f": float(best_f),
+            "n_evals": int(n_evals),
+            "history_best": history_best,
+            "history_alpha": history_alpha,
+            "history_pop": history_pop,
+            "best_found_time": best_found_time,
+        }
+        filename = "results/gwo_result.json"
+        store_as_json(data, filename)
     elif args.opt == "MISC":
         iea_config = load_iea_config("dataset/iea.json")
 
@@ -203,9 +221,8 @@ def main():
         )
 
         result = opt.optimize()
-        print("best_x =", result["best_x"])
-        print("best_f =", result["best_f"])
-        print("evaluations =", result["evaluations"])
+        filename = "results/misc_result.json"
+        store_as_json(result, filename)
 
 
 if __name__ == "__main__":

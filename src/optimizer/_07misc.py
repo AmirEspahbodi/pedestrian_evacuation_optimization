@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -240,12 +241,10 @@ def _uniform_crossover(
 @dataclass
 class MISOConfig:
     nmax: int = 300  # total expensive eval budget
-    n0: Optional[int] = (
-        None  # default = 2*(d+1) (paper) :contentReference[oaicite:7]{index=7}
-    )
+    n0: Optional[int] = 7
 
     # c-step parameters (paper defaults) :contentReference[oaicite:8]{index=8}
-    Tc_s: int = 3
+    Tc_s: int = 1
     Tc_f: Optional[int] = None  # default max(5,d)
     Tc_r: int = 5
     W: Tuple[float, ...] = (0.3, 0.5, 0.8, 0.95)
@@ -730,6 +729,7 @@ class MISOIntegerOptimizer:
     # Main optimize loop (Algorithm 3) :contentReference[oaicite:30]{index=30}
     # ============================================================
     def optimize(self) -> Dict[str, object]:
+        start_time = time.perf_counter()
         d = self.k
         nmax = int(self.cfg.nmax)
 
@@ -780,6 +780,7 @@ class MISOIntegerOptimizer:
             return self.X[real_idx].copy(), float(self.y[real_idx])
 
         zbest, fbest = current_best()
+        time_to_best = time.perf_counter() - start_time
         n = len(self.X)
 
         # Track whether (c+t) phase improved best; used to trigger local search.
@@ -803,6 +804,7 @@ class MISOIntegerOptimizer:
                 if ok and fnew < fbest:
                     fbest = fnew
                     zbest = znew.copy()
+                    time_to_best = time.perf_counter() - start_time
                     Cc_s += 1
                     Cc_f = 0
                     if Cc_s > self.cfg.Tc_s:
@@ -841,6 +843,7 @@ class MISOIntegerOptimizer:
                 if ok and fnew < fbest:
                     fbest = fnew
                     zbest = znew.copy()
+                    time_to_best = time.perf_counter() - start_time
                     Ct_s += 1
                     Ct_f = 0
                 else:
@@ -865,6 +868,7 @@ class MISOIntegerOptimizer:
                                 if fl < fbest:
                                     fbest = fl
                                     zbest = zl.copy()
+                                    time_to_best = time.perf_counter() - start_time
                                 history.append(
                                     {
                                         "phase": "local",
@@ -888,6 +892,9 @@ class MISOIntegerOptimizer:
         return {
             "best_x": zbest.copy(),
             "best_f": float(fbest),
+            "time_to_best": time_to_best,  # <--- Add this
+            "total_time": time.perf_counter()
+            - start_time,  # <--- Optional: Adds total runtime too
             "evaluations": len(self.X),
             "X": np.vstack(self.X).astype(int),
             "y": np.asarray(self.y, dtype=float),
