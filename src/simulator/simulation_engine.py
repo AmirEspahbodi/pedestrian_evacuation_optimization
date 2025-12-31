@@ -13,7 +13,6 @@ import numpy as np
 
 # import matplotlib.pyplot as plt
 
-T_STAR = []
 
 #######################################################
 
@@ -282,8 +281,22 @@ def simulate(args, steps, pedestrian, window):
 
 
 def main(SimulationConfig, gird: list[list[int]], pedestrian, window=None):
-    global kappaS, kappaD, dim_y, dim_x, exit_cells, SFF, alpha, delta, walls, parallel, box, moore, T_STAR
+    global \
+        kappaS, \
+        kappaD, \
+        dim_y, \
+        dim_x, \
+        exit_cells, \
+        SFF, \
+        alpha, \
+        delta, \
+        walls, \
+        parallel, \
+        box, \
+        moore, \
+        T_STAR
     # init parameters
+    T_STAR = []
 
     MAX_STEPS = SimulationConfig.simulator.timeLimit
     steps = range(MAX_STEPS)

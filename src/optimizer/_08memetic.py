@@ -29,11 +29,11 @@ class MemeticAlgorithm:
         self.omega = simulator_config.omega
         self.perimeter_length = 2 * (len(gird) + len(gird[0]))
         self.max_val_for_element = self.perimeter_length - self.omega
-        self.population_size = population_size
-        self.crossover_rate = crossover_rate
-        self.mutation_rate = mutation_rate
-        self.local_search_rate = local_search_rate
-        self.local_search_iterations = local_search_iterations
+        self.population_size = 30
+        self.crossover_rate = 0.8
+        self.mutation_rate = 0.15
+        self.local_search_rate = 0.15
+        self.local_search_iterations = 8
         self.population = []
 
     def _initialize_population(self):
@@ -113,19 +113,12 @@ class MemeticAlgorithm:
 
         return best_individual
 
-    def run(self, num_episodes=20):
+    def run(self, num_episodes=200):
         """
         Runs the Memetic Algorithm for a given number of episodes or evaluations.
-
-        Args:
-            num_episodes (int): The maximum number of generations.
-
-        Returns:
-            A tuple containing the best individual, its fitness score, the history of fitness per episode,
-            and the time to reach the best fitness.
         """
         # Setup
-        self.max_evals = self.iea_config.max_evals
+        self.max_evals = 1300
         start_time = time.perf_counter()
         history = {f"episode-{i + 1}": [] for i in range(num_episodes)}
 
@@ -188,4 +181,12 @@ class MemeticAlgorithm:
                         self.population[j] = refined
                         break
 
-        return best_overall_individual, best_overall_fitness, history, time_to_best
+        # Convert numpy types to native python types for JSON serialization
+        final_best_ind = (
+            [int(x) for x in best_overall_individual]
+            if best_overall_individual is not None
+            else None
+        )
+        final_best_fit = float(best_overall_fitness)
+
+        return final_best_ind, final_best_fit, history, time_to_best
