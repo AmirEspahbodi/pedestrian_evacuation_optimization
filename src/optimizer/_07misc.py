@@ -691,7 +691,7 @@ class MISOIntegerOptimizer:
         step = int(max(1, round(0.05 * float(np.min(span)))))
         step = max(step, 1)
 
-        seen = set(tuple(int(v) for v in self.X))
+        seen = set(tuple(int(c) for c in x) for x in self.X)
 
         while used < max_evals and step >= 1:
             improved = False

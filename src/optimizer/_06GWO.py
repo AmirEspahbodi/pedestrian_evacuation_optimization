@@ -399,8 +399,7 @@ def integer_enhanced_gwo(
 
     return {
         "best_x": best_x.astype(int).tolist(),
-        "best_f": float(best_f),
-        "n_evals": int(n_evals),
+        "best_f": best_f,
         "history_best": history_best,
         "history_alpha": history_alpha,
         "history_pop": history_pop,
