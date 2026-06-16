@@ -733,22 +733,18 @@ class MISOIntegerOptimizer:
         d = self.k
         nmax = int(self.cfg.nmax)
 
-        n0 = (
-            self.cfg.n0 if self.cfg.n0 is not None else 2 * (d + 1)
-        )  # paper default :contentReference[oaicite:31]{index=31}
+        n0 = self.cfg.n0 if self.cfg.n0 is not None else 2 * (d + 1)
         if n0 % 2 != 0:
             n0 += 1
 
         Tc_f = self.cfg.Tc_f if self.cfg.Tc_f is not None else max(5, d)
-        Tt_f = self.cfg.P + 2  # |G| = P+2 :contentReference[oaicite:32]{index=32}
+        Tt_f = self.cfg.P + 2
 
-        # radii per paper: r0=0.2*l(D), rl=2^-6*r0 :contentReference[oaicite:33]{index=33}
         lD = float(np.min(self.upper - self.lower))
         r0 = self.cfg.r0_frac * lD
         rl = max(1.0, self.cfg.r_min_frac * r0)
         r = r0
 
-        # init counters (Algorithm 3, step 3) :contentReference[oaicite:34]{index=34}
         c_step = True
         t_step = False
 
@@ -761,7 +757,6 @@ class MISOIntegerOptimizer:
         Ct_s = 0
         Ct_i = 0
 
-        # init design + surrogate fit (Algorithm 3, steps 4-6) :contentReference[oaicite:35]{index=35}
         self._initial_design(n0)
         self._fit_surrogate()
 
@@ -769,11 +764,9 @@ class MISOIntegerOptimizer:
 
         def current_best() -> Tuple[np.ndarray, float]:
             yarr = np.asarray(self.y, dtype=float)
-            # prefer valid best
             vmask = np.asarray(self.valid, dtype=bool)
             if np.any(vmask):
                 idx = int(np.argmin(yarr[vmask]))
-                # map back
                 real_idx = int(np.where(vmask)[0][idx])
             else:
                 real_idx = int(np.argmin(yarr))
@@ -783,12 +776,10 @@ class MISOIntegerOptimizer:
         time_to_best = time.perf_counter() - start_time
         n = len(self.X)
 
-        # Track whether (c+t) phase improved best; used to trigger local search.
         fbest_at_phase_start = fbest
 
         while n < nmax:
             if c_step:
-                # Algorithm 3: c-step branch, increment counter, use Alg.4 :contentReference[oaicite:36]{index=36}
                 Cc_i += 1
                 znew = self._c_step_propose(zbest, n, n0, nmax, r, Cc_i)
 
@@ -800,7 +791,6 @@ class MISOIntegerOptimizer:
 
                 history.append({"phase": "c", "x": znew.copy(), "f": fnew, "ok": ok})
 
-                # Update best from true evaluations
                 if ok and fnew < fbest:
                     fbest = fnew
                     zbest = znew.copy()
@@ -808,22 +798,18 @@ class MISOIntegerOptimizer:
                     Cc_s += 1
                     Cc_f = 0
                     if Cc_s > self.cfg.Tc_s:
-                        r = min(
-                            r0, 2.0 * r
-                        )  # step 24 :contentReference[oaicite:37]{index=37}
+                        r = min(r0, 2.0 * r)
                         Cc_s = 0
                 else:
                     Cc_f += 1
                     Cc_s = 0
                     if Cc_f > Tc_f:
                         if Cc_r > self.cfg.Tc_r:
-                            # switch to t-step (step 16) :contentReference[oaicite:38]{index=38}
                             c_step = False
                             t_step = True
                             Cc_r = 0
                             Cc_f = 0
                         else:
-                            # decrease radius and reset fail counter (step 19) :contentReference[oaicite:39]{index=39}
                             Cc_r += 1
                             r = max(rl, r / 2.0)
                             Cc_f = 0
@@ -850,12 +836,10 @@ class MISOIntegerOptimizer:
                     Ct_f += 1
                     Ct_s = 0
                     if Ct_f > Tt_f:
-                        # t-step ends -> switch back to c-step (Alg.5 step 31) :contentReference[oaicite:40]{index=40}
                         t_step = False
                         c_step = True
                         Ct_f = 0
 
-                        # memetic local search trigger: if (c+t) didn't improve best
                         if self.cfg.enable_local_search and (
                             fbest >= fbest_at_phase_start - 1e-12
                         ):
@@ -864,7 +848,7 @@ class MISOIntegerOptimizer:
                                 zl, fl, used = self._local_search(
                                     zbest, remaining_budget=remaining
                                 )
-                                n = len(self.X)  # local search appended points
+                                n = len(self.X)
                                 if fl < fbest:
                                     fbest = fl
                                     zbest = zl.copy()
@@ -882,22 +866,44 @@ class MISOIntegerOptimizer:
                         fbest_at_phase_start = fbest
 
             else:
-                # Shouldn't happen in CPTV; keep safe
                 c_step = True
 
-            # Update surrogate after each expensive evaluation (Algorithm 3, step 24) :contentReference[oaicite:41]{index=41}
             self._fit_surrogate()
             zbest, fbest = current_best()
 
+        # -------------------------------------------------------------------------
+        # JSON Serialization Preparation
+        # -------------------------------------------------------------------------
+
+        # 1. Clean history: Convert per-step arrays to lists and bool_ to bool
+        json_safe_history = []
+        for record in history:
+            clean_record = record.copy()
+            # Convert numpy array 'x' to a standard list of integers
+            if isinstance(clean_record.get("x"), np.ndarray):
+                clean_record["x"] = clean_record["x"].tolist()
+            # Ensure 'ok' is a python bool (not np.bool_)
+            if "ok" in clean_record:
+                clean_record["ok"] = bool(clean_record["ok"])
+            # Ensure 'f' is a python float
+            if "f" in clean_record:
+                clean_record["f"] = float(clean_record["f"])
+            # Ensure 'used' is a python int
+            if "used" in clean_record:
+                clean_record["used"] = int(clean_record["used"])
+            json_safe_history.append(clean_record)
+
+        # 2. Return dictionary with all types cast to Python natives
         return {
-            "best_x": zbest.copy(),
-            "best_f": float(fbest),
-            "time_to_best": time_to_best,  # <--- Add this
-            "total_time": time.perf_counter()
-            - start_time,  # <--- Optional: Adds total runtime too
-            "evaluations": len(self.X),
-            "X": np.vstack(self.X).astype(int),
-            "y": np.asarray(self.y, dtype=float),
-            "valid": np.asarray(self.valid, dtype=bool),
-            "history": history,
+            "best_x": zbest.tolist(),  # np.ndarray -> list
+            "best_f": float(fbest),  # np.float -> float
+            "time_to_best": float(time_to_best),
+            "total_time": float(time.perf_counter() - start_time),
+            "evaluations": int(len(self.X)),
+            # Vertically stack X, convert to int array, then to list of lists
+            "X": np.vstack(self.X).astype(int).tolist(),
+            # Convert scalar numpy types in lists to python natives
+            "y": [float(val) for val in self.y],
+            "valid": [bool(val) for val in self.valid],
+            "history": json_safe_history,
         }

@@ -32,7 +32,7 @@ def enforce_boundary_walls(input_path: str, output_path: str):
 
 if __name__ == "__main__":
     # Configuration
-    INPUT_FILE = "obstacle_grid_400.txt"
-    OUTPUT_FILE = "obstacle_grid_walled_400.txt"
+    INPUT_FILE = "obstacle_grid.txt"
+    OUTPUT_FILE = "obstacle_grid_walled.txt"
 
     enforce_boundary_walls(INPUT_FILE, OUTPUT_FILE)

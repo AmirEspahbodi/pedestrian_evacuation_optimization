@@ -8,8 +8,8 @@ from PyQt6.QtGui import QColor, QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
 
 # --- Configuration ---
-INPUT_FILE = "obstacle_grid_walled_400.txt"
-OUTPUT_FILE = "obstacle_grid_walled_with_access_400.txt"
+INPUT_FILE = "obstacle_grid_walled.txt"
+OUTPUT_FILE = "obstacle_grid_walled_with_access.txt"
 
 # Cell Values
 VAL_EMPTY = 0
@@ -19,7 +19,7 @@ VAL_ACCESS = 4
 
 # Generator Settings
 ACCESS_COUNT = 2
-MIN_ACCESS_LEN = 3
+MIN_ACCESS_LEN = 2
 MAX_ACCESS_LEN = 4
 
 # Visualization Colors (R, G, B)

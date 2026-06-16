@@ -234,8 +234,8 @@ def main():
     app = QApplication(sys.argv)
 
     # 1. Define Dimensions
-    SIM_WIDTH = 100
-    SIM_HEIGHT = 100
+    SIM_WIDTH = 50
+    SIM_HEIGHT = 50
 
     # 2. Generate Grid
     generator = ProceduralGenerator(SIM_WIDTH, SIM_HEIGHT)
@@ -243,7 +243,7 @@ def main():
 
     # 3. Save to File (The new requirement)
     # Using 'generated_grid.txt' in the current directory
-    generator.save_to_file(f"initial_gird_{str(2 * SIM_WIDTH + 2 * SIM_HEIGHT)}.txt")
+    generator.save_to_file(f"initial_gird.txt")
 
     # 4. Visualize
     window = MapVisualizer(SIM_WIDTH, SIM_HEIGHT, grid)

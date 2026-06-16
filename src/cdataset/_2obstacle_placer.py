@@ -65,8 +65,8 @@ class FurniturePlacer:
         Constraint 3: Gap > 3 cells from room walls (We use 4 to be safe '>', or 3 strict).
         Constraint 4: Gap > 5 cells from environment boundary.
         """
-        WALL_MARGIN = 2
-        BORDER_MARGIN = 4
+        WALL_MARGIN = 1
+        BORDER_MARGIN = 1
 
         # A. Apply Border Constraints
         self.valid_mask[0:BORDER_MARGIN, :] = False
@@ -129,7 +129,7 @@ class FurniturePlacer:
         # We attempt to place items N times.
         # We prioritize "Sets" to make it intelligent.
 
-        attempts = 100  # Total attempts to find spots for groups
+        attempts = 50  # Total attempts to find spots for groups
 
         for _ in range(attempts):
             # Random starting point within valid bounds
@@ -278,7 +278,7 @@ def main():
 
     # 1. Load and Populate
     # Ensure this matches the filename saved in the previous step
-    FILENAME = "generated_grid_400.txt"
+    FILENAME = "initial_gird.txt"
 
     placer = FurniturePlacer(FILENAME)
 

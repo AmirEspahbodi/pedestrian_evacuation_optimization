@@ -197,7 +197,7 @@ pyrightconfig.json
 old/
 result/
 results/
-initial_grid*
+initial_gird*
 obstacle_grid*
 populated_grid*
 #finall_grid*
