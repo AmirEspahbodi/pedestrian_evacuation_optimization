@@ -118,7 +118,7 @@ class MemeticAlgorithm:
         Runs the Memetic Algorithm for a given number of episodes or evaluations.
         """
         # Setup
-        self.max_evals = 2600
+        self.max_evals = 1300
         start_time = time.perf_counter()
         history = {f"episode-{i + 1}": [] for i in range(num_episodes)}
 
