@@ -48,7 +48,7 @@ def integer_enhanced_gwo(
     fitness_fn = FitnessEvaluator(gird, pedestrian_confs, simulator_config).evaluate
     dim = simulator_config.numEmergencyExits
     bounds = (0, 2 * (len(gird) + len(gird[0])))
-    max_evals = 1310
+    max_evals = 2600
 
     if dim <= 0:
         raise ValueError("dim must be positive.")

@@ -2,7 +2,7 @@
   "numEmergencyExits": 2,
   "omega": 3,
   "simulator": {
-    "timeLimit": 60,
+    "timeLimit": 40,
     "cellularAutomatonParameters": {
       "kappaStatic": 2.0,
       "kappaDynamic": 1.0,

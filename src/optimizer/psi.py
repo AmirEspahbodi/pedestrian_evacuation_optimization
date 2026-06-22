@@ -7,7 +7,7 @@ from typing_extensions import Any
 
 from src.config.simulation_config import SimulationConfig
 from src.simulator.simulation_engine import main as evacuate_engine
-from src.utils import add_emergency_exits, calculate_p_star
+from src.utils import add_emergency_exits, calculate_d_star
 
 
 def calculate_fitness(
@@ -29,7 +29,7 @@ def calculate_fitness(
         float(sum(t_stars)) / (num_total_peds) / simulator_config.simulator.timeLimit
         + 1
     )
-    if num_non_evacuated_peds:
+    if num_non_evacuated_peds and d_stars:
         min_d_star = w4 * float(min(d_stars)) / D_diagonal
         avg_d_star = w5 * (float(sum(d_stars)) / num_total_peds) / D_diagonal
         fitness_value += min_d_star + avg_d_star
@@ -55,7 +55,7 @@ def psi(
         np.copyto(pedestrians_copy, pedestrian)
         num_total_pedestrians = np.sum(pedestrians_copy)
         t_star = evacuate_engine(simulator_config, gird_copy, pedestrians_copy)
-        d_star = calculate_p_star(gird_copy, pedestrians_copy)
+        d_star = calculate_d_star(gird_copy, pedestrians_copy)
         num_peds = np.sum(pedestrians_copy)
         fitness_value = calculate_fitness(
             num_peds,

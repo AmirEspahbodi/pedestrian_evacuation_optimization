@@ -91,7 +91,7 @@ def ea_algorithm(
     # popsize = ea_config.popsize
     # pr = ea_config.recombination_prob
     # gamma = ea_config.mutation_gamma
-    maxevals = 1050
+    maxevals = 2048
 
     history: Dict[str, List[float]] = {}
     start_time = time.perf_counter()

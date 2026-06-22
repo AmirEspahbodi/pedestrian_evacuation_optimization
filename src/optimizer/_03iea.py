@@ -82,7 +82,7 @@ def iea_optimizer(
     p_recomb = 0.8
     gamma = 0.05
 
-    max_evals = 1014
+    max_evals = 2048
 
     evalr = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
 
