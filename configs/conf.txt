@@ -1,0 +1,2 @@
+p200 -> timelimit=40, ped_num=100
+p400 -> timelimit=60, ped_num=200

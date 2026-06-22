@@ -56,19 +56,29 @@ def main():
         help="The optimization method (EA, IEA, GREEDY, QL, MEMETIC)",
     )
     args = parser.parse_args()
-    simulator_config = load_simulation_config("dataset/simulation.json")
+    simulator_config = load_simulation_config("configs/simulation.json")
 
     DATASET_FILES = [
-        "dataset/p400/finall_grid_400_1.txt",
-        "dataset/p400/finall_grid_400_2.txt",
-        "dataset/p400/finall_grid_400_3.txt",
-        "dataset/p400/finall_grid_400_4.txt",
-        "dataset/p400/finall_grid_400_5.txt",
-        "dataset/p400/finall_grid_400_6.txt",
-        "dataset/p400/finall_grid_400_7.txt",
-        "dataset/p400/finall_grid_400_8.txt",
-        "dataset/p400/finall_grid_400_9.txt",
-        "dataset/p400/finall_grid_400_10.txt",
+        "datasets/p200/finall_grid_400_1.txt",
+        "datasets/p200/finall_grid_400_2.txt",
+        "datasets/p200/finall_grid_400_3.txt",
+        "datasets/p200/finall_grid_400_4.txt",
+        "datasets/p200/finall_grid_400_5.txt",
+        "datasets/p200/finall_grid_400_6.txt",
+        "datasets/p200/finall_grid_400_7.txt",
+        "datasets/p200/finall_grid_400_8.txt",
+        "datasets/p200/finall_grid_400_9.txt",
+        "datasets/p200/finall_grid_400_10.txt",
+        "datasets/p200/finall_grid_400_11.txt",
+        "datasets/p200/finall_grid_400_12.txt",
+        "datasets/p200/finall_grid_400_13.txt",
+        "datasets/p200/finall_grid_400_14.txt",
+        "datasets/p200/finall_grid_400_15.txt",
+        "datasets/p200/finall_grid_400_16.txt",
+        "datasets/p200/finall_grid_400_17.txt",
+        "datasets/p200/finall_grid_400_18.txt",
+        "datasets/p200/finall_grid_400_19.txt",
+        "datasets/p200/finall_grid_400_20.txt",
     ]
 
     with open(DATASET_FILES[0], "r") as f:
@@ -86,7 +96,7 @@ def main():
             pedestrian_confs.append(pedestrian)
 
     if args.opt == "EA":
-        ea_config = load_ea_config("dataset/ea.json")
+        ea_config = load_ea_config("configs/ea.json")
         best_overall_genes, best_overall_fitness, time_to_best, history = ea_algorithm(
             pedestrian_confs, clean_gird, simulator_config, ea_config
         )
@@ -96,7 +106,7 @@ def main():
             "time_to_best": time_to_best,
             "history": history,
         }
-        filename = "results/ea_result.json"
+        filename = "results/p200/ea_result.json"
         store_as_json(data, filename)
     elif args.opt == "GREEDY":
         e_solutions, best_overall_fitness, time_of_best = greedy_algorithm(
@@ -107,10 +117,10 @@ def main():
             "best_overall_fitness": best_overall_fitness,
             "time_of_best": time_of_best,
         }
-        filename = "results/greedy_result.json"
+        filename = "results/p200/greedy_result.json"
         store_as_json(data, filename)
     elif args.opt == "IEA":
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
         global_best_individual, global_best_fitness, history, time_to_best = (
             iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
         )
@@ -120,10 +130,10 @@ def main():
             "history": history,
             "time_to_best": time_to_best,
         }
-        filename = "results/iea_result.json"
+        filename = "results/p200/iea_result.json"
         store_as_json(data, filename)
     elif args.opt == "MEMETIC":
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
         memetic_algorithm = MemeticAlgorithm(
             pedestrian_confs, clean_gird, simulator_config, iea_config
         )
@@ -136,10 +146,10 @@ def main():
             "history": history,
             "time_to_best": time_to_best,
         }
-        filename = "results/memetic_result.json"
+        filename = "results/p200/memetic_result.json"
         store_as_json(data, filename)
     elif args.opt == "QL":
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
         best_solution, best_fitness, history, time_to_best = q_learning_exit_optimizer(
             pedestrian_confs, clean_gird, simulator_config, iea_config
         )
@@ -149,10 +159,10 @@ def main():
             "history": history,
             "time_to_best": time_to_best,
         }
-        filename = "results/ql_result.json"
+        filename = "results/p200/ql_result.json"
         store_as_json(data, filename)
     elif args.opt == "CAT-MA-AWM":
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
         (
             best_global_solution_vector,
             best_global_solution_gen,
@@ -167,11 +177,11 @@ def main():
             "time_to_find_best_global_solution": time_to_find_best_global_solution,
             "history": history,
         }
-        filename = "results/CAT_MA_AWM_result.json"
+        filename = "results/p200/CAT_MA_AWM_result.json"
         store_as_json(data, filename)
     elif args.opt == "GWO":
         blocked = {}
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
 
         def valid(x: np.ndarray) -> bool:
             return all(int(v) not in blocked for v in x)
@@ -200,10 +210,10 @@ def main():
             "history_pop": history_pop,
             "best_found_time": best_found_time,
         }
-        filename = "results/gwo_result.json"
+        filename = "results/p200/gwo_result.json"
         store_as_json(data, filename)
     elif args.opt == "MISC":
-        iea_config = load_iea_config("dataset/iea.json")
+        iea_config = load_iea_config("configs/iea.json")
 
         def is_valid(x: np.ndarray) -> bool:
             return True
@@ -221,7 +231,7 @@ def main():
         )
 
         result = opt.optimize()
-        filename = "results/misc_result.json"
+        filename = "results/p200/misc_result.json"
         store_as_json(result, filename)
 
 

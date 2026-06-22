@@ -8,14 +8,14 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from scipy.spatial.distance import cdist
 
 # Configuration
-INPUT_FILE = "obstacle_grid_walled_with_access.txt"
-OUTPUT_FILE = "finall_grid_200_NUM.txt"
-TARGET_PEDESTRIANS = 100 #for p=200
-# TARGET_PEDESTRIANS = 200 #for p=400
-# TARGET_PEDESTRIANS = 300 #for p=600
-# TARGET_PEDESTRIANS = 400 #for p=800
+INPUT_FILE = "P800_obstacle_grid_walled_with_access.txt"
+OUTPUT_FILE = "finall_grid_800_NUM.txt"
+# TARGET_PEDESTRIANS = 100  # for p=200
+# TARGET_PEDESTRIANS = 200  # for p=400
+# TARGET_PEDESTRIANS = 300  # for p=600
+TARGET_PEDESTRIANS = 400  # for p=800
 CANDIDATES_PER_STEP = 15
-NUM_EVALUATE = 10
+NUM_EVALUATE = 20
 
 # Color Mapping for Visualization (R, G, B)
 COLORS = {

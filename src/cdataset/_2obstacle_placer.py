@@ -66,7 +66,7 @@ class FurniturePlacer:
         Constraint 4: Gap > 5 cells from environment boundary.
         """
         WALL_MARGIN = 1
-        BORDER_MARGIN = 1
+        BORDER_MARGIN = 2
 
         # A. Apply Border Constraints
         self.valid_mask[0:BORDER_MARGIN, :] = False
@@ -129,7 +129,7 @@ class FurniturePlacer:
         # We attempt to place items N times.
         # We prioritize "Sets" to make it intelligent.
 
-        attempts = 50  # Total attempts to find spots for groups
+        attempts = 200  # Total attempts to find spots for groups
 
         for _ in range(attempts):
             # Random starting point within valid bounds
@@ -157,8 +157,8 @@ class FurniturePlacer:
         """
         # 1. Place Sofa (2-3 W, 3-5 L)
         # Randomize orientation (vertical vs horizontal dimensions)
-        dim1 = random.randint(1, 3)
-        dim2 = random.randint(3, 5)
+        dim1 = random.randint(2, 4)
+        dim2 = random.randint(3, 6)
         sw, sh = (dim1, dim2) if random.choice([True, False]) else (dim2, dim1)
 
         if self._can_place(x, y, sw, sh):

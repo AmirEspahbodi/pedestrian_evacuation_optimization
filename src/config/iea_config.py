@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, ValidationError
 
 # 1. Define the Pydantic Model
 class IEAConfig(BaseModel):
-    numruns: int
     seed: int
     numislands: int = Field(..., gt=0, description="Number of islands must be positive")
     popsize: int

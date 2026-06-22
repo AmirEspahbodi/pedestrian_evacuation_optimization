@@ -9,7 +9,6 @@ class CellularAutomatonParameters(BaseModel):
     kappaDynamic: float
     decayProbability: float
     diffusionProbability: float
-    numRuns: int
     enableParallel: bool
     neighborhood: str
     diffusion: float

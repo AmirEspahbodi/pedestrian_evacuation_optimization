@@ -234,8 +234,8 @@ def main():
     app = QApplication(sys.argv)
 
     # 1. Define Dimensions
-    SIM_WIDTH = 50
-    SIM_HEIGHT = 50
+    SIM_WIDTH = 200
+    SIM_HEIGHT = 200
 
     # 2. Generate Grid
     generator = ProceduralGenerator(SIM_WIDTH, SIM_HEIGHT)
