@@ -9,7 +9,8 @@ from src.config import load_ea_config, load_iea_config, load_simulation_config
 from src.optimizer._01ea import ea_algorithm
 from src.optimizer._02greedy import greedy_algorithm
 from src.optimizer._03iea import iea_optimizer
-from src.optimizer._04ql import q_learning_exit_optimizer
+
+# from src.optimizer._04ql import q_learning_exit_optimizer
 from src.optimizer._05cat_ma_awm import _05cat_ma_awm
 from src.optimizer._06GWO import integer_enhanced_gwo
 from src.optimizer._07misc import GAConfig, MISOConfig, MISOIntegerOptimizer
@@ -164,19 +165,19 @@ def main():
         }
         filename = "results/p200/memetic_result.json"
         store_as_json(data, filename)
-    elif args.opt == "QL":
-        iea_config = load_iea_config("configs/iea.json")
-        best_solution, best_fitness, history, time_to_best = q_learning_exit_optimizer(
-            pedestrian_confs, clean_gird, simulator_config, iea_config
-        )
-        data: dict[str, Any] = {
-            "best_solution": best_solution,
-            "best_fitness": best_fitness,
-            "history": history,
-            "time_to_best": time_to_best,
-        }
-        filename = "results/p200/ql_result.json"
-        store_as_json(data, filename)
+    # elif args.opt == "QL":
+    #     iea_config = load_iea_config("configs/iea.json")
+    #     best_solution, best_fitness, history, time_to_best = q_learning_exit_optimizer(
+    #         pedestrian_confs, clean_gird, simulator_config, iea_config
+    #     )
+    #     data: dict[str, Any] = {
+    #         "best_solution": best_solution,
+    #         "best_fitness": best_fitness,
+    #         "history": history,
+    #         "time_to_best": time_to_best,
+    #     }
+    #     filename = "results/p200/ql_result.json"
+    #     store_as_json(data, filename)
     elif args.opt == "CAT-MA-AWM":
         iea_config = load_iea_config("configs/iea.json")
         (
