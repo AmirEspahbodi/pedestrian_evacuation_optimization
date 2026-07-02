@@ -104,11 +104,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Name of your file
-    FILE_NAME = "P800_obstacle_grid_walled_with_access.txt"
+    FILE_NAME = "datasets/p600/finall_grid_600_5.txt"
 
     # Create and show window
     # scale=5 means 1 grid cell will be a 5x5 pixel square on screen
-    viewer = GridVisualizer(FILE_NAME, scale=2)
+    viewer = GridVisualizer(FILE_NAME, scale=4)
     viewer.show()
 
     sys.exit(app.exec())

@@ -77,12 +77,13 @@ def _binary_tournament_selection(pop: List[Individual]) -> Individual:
 
 def ea_algorithm(
     pedestrian_confs, gird, simulator_config, ea_config
-) -> Tuple[List[int], float, float, Dict[str, List[float]]]:
+) -> Tuple[List[int], float, float, Dict[str, List[float]], int]:
     # 1. Setup Environment
     # Calculate perimeter correctly based on grid dimensions
     perimeter = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
     psi = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+    best_fitness_eval_count = 0
 
     # 2. Load Optimized Hyperparameters
     popsize = 50
@@ -182,6 +183,13 @@ def ea_algorithm(
         # Check for new global best
         if population[0].fitness < best_overall.fitness:
             best_overall = population[0]
+            best_fitness_eval_count = psi.get_evaluation_count()
             time_to_best = time.perf_counter() - start_time
 
-    return best_overall.genes, best_overall.fitness, time_to_best, history
+    return (
+        best_overall.genes,
+        best_overall.fitness,
+        time_to_best,
+        history,
+        best_fitness_eval_count,
+    )

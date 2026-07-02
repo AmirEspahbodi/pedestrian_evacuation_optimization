@@ -6,7 +6,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Un
 
 import numpy as np
 
-from .common import FitnessEvaluator
+from .common import FitnessEvaluator, psi_function
 
 ArrayLikeInt = Union[np.ndarray, Sequence[int]]
 Bounds = Union[Tuple[int, int], Sequence[Tuple[int, int]]]
@@ -45,7 +45,7 @@ def integer_enhanced_gwo(
     # --- 1. Start Timer ---
     t0 = time.time()
 
-    fitness_fn = FitnessEvaluator(gird, pedestrian_confs, simulator_config).evaluate
+    fitness_fn = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
     dim = simulator_config.numEmergencyExits
     bounds = (0, 2 * (len(gird) + len(gird[0])))
     max_evals = 1310
@@ -168,7 +168,7 @@ def integer_enhanced_gwo(
             cache[key] = float(penalty_value)
             return cache[key]
         try:
-            val = float(fitness_fn(x_int.copy()))
+            val = float(fitness_fn.evaluate(x_int.copy()))
         except Exception:
             val = float(penalty_value)
         cache[key] = val
@@ -260,6 +260,8 @@ def integer_enhanced_gwo(
 
     # --- 2. Track initial best time and history containers ---
     best_found_time = time.time() - t0
+    best_fitness_eval_count = 0
+
     history_pop: Dict[str, List[float]] = {}
 
     history_best: List[float] = [best_f]
@@ -360,6 +362,7 @@ def integer_enhanced_gwo(
             best_x, best_f = alpha_x.copy(), float(alpha_f)
             # --- 4. Capture Discovery Time ---
             best_found_time = time.time() - t0
+            best_fitness_eval_count = fitness_fn.get_evaluation_count()
             stall = 0
         else:
             stall += 1
@@ -397,11 +400,12 @@ def integer_enhanced_gwo(
                 print(f"[stop] eval budget reached: {n_evals}/{max_evals}")
             break
 
-    return {
-        "best_x": best_x.astype(int).tolist(),
-        "best_f": best_f,
-        "history_best": history_best,
-        "history_alpha": history_alpha,
-        "history_pop": history_pop,
-        "discovery_time": best_found_time,
-    }
+    return (
+        best_x.astype(int).tolist(),
+        best_f,
+        history_best,
+        history_alpha,
+        history_pop,
+        best_found_time,
+        best_fitness_eval_count,
+    )

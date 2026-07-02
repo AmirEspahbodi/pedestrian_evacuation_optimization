@@ -59,26 +59,26 @@ def main():
     simulator_config = load_simulation_config("configs/simulation.json")
 
     DATASET_FILES = [
-        "datasets/p200/finall_grid_200_1.txt",
-        "datasets/p200/finall_grid_200_2.txt",
-        "datasets/p200/finall_grid_200_3.txt",
-        "datasets/p200/finall_grid_200_4.txt",
-        "datasets/p200/finall_grid_200_5.txt",
-        "datasets/p200/finall_grid_200_6.txt",
-        "datasets/p200/finall_grid_200_7.txt",
-        "datasets/p200/finall_grid_200_8.txt",
-        "datasets/p200/finall_grid_200_9.txt",
-        "datasets/p200/finall_grid_200_10.txt",
-        "datasets/p200/finall_grid_200_11.txt",
-        "datasets/p200/finall_grid_200_12.txt",
-        "datasets/p200/finall_grid_200_13.txt",
-        "datasets/p200/finall_grid_200_14.txt",
-        "datasets/p200/finall_grid_200_15.txt",
-        "datasets/p200/finall_grid_200_16.txt",
-        "datasets/p200/finall_grid_200_17.txt",
-        "datasets/p200/finall_grid_200_18.txt",
-        "datasets/p200/finall_grid_200_19.txt",
-        "datasets/p200/finall_grid_200_20.txt",
+        "datasets/p600/finall_grid_600_1.txt",
+        "datasets/p600/finall_grid_600_2.txt",
+        "datasets/p600/finall_grid_600_3.txt",
+        "datasets/p600/finall_grid_600_4.txt",
+        "datasets/p600/finall_grid_600_5.txt",
+        "datasets/p600/finall_grid_600_6.txt",
+        "datasets/p600/finall_grid_600_7.txt",
+        "datasets/p600/finall_grid_600_8.txt",
+        "datasets/p600/finall_grid_600_9.txt",
+        "datasets/p600/finall_grid_600_10.txt",
+        "datasets/p600/finall_grid_600_11.txt",
+        "datasets/p600/finall_grid_600_12.txt",
+        "datasets/p600/finall_grid_600_13.txt",
+        "datasets/p600/finall_grid_600_14.txt",
+        "datasets/p600/finall_grid_600_15.txt",
+        "datasets/p600/finall_grid_600_16.txt",
+        "datasets/p600/finall_grid_600_17.txt",
+        "datasets/p600/finall_grid_600_18.txt",
+        "datasets/p600/finall_grid_600_19.txt",
+        "datasets/p600/finall_grid_600_20.txt",
     ]
 
     with open(DATASET_FILES[0], "r") as f:
@@ -97,56 +97,72 @@ def main():
 
     if args.opt == "EA":
         ea_config = load_ea_config("configs/ea.json")
-        best_overall_genes, best_overall_fitness, time_to_best, history = ea_algorithm(
-            pedestrian_confs, clean_gird, simulator_config, ea_config
-        )
+        (
+            best_overall_genes,
+            best_overall_fitness,
+            time_to_best,
+            history,
+            best_fitness_eval_count,
+        ) = ea_algorithm(pedestrian_confs, clean_gird, simulator_config, ea_config)
         data = {
             "best_overall_genes": best_overall_genes,
             "best_overall_fitness": best_overall_fitness,
             "time_to_best": time_to_best,
             "history": history,
+            "best_fitness_eval_count": best_fitness_eval_count,
         }
-        filename = "results/p200/ea_result.json"
+        filename = "results/p600/ea_result.json"
         store_as_json(data, filename)
     elif args.opt == "GREEDY":
-        e_solutions, best_overall_fitness, time_of_best = greedy_algorithm(
-            pedestrian_confs, clean_gird, simulator_config
+        e_solutions, best_overall_fitness, time_of_best, best_fitness_eval_count = (
+            greedy_algorithm(pedestrian_confs, clean_gird, simulator_config)
         )
         data = {
             "e_solutions": e_solutions,
             "best_overall_fitness": best_overall_fitness,
             "time_of_best": time_of_best,
+            "best_fitness_eval_count": best_fitness_eval_count,
         }
-        filename = "results/p200/greedy_result.json"
+        filename = "results/p600/greedy_result.json"
         store_as_json(data, filename)
     elif args.opt == "IEA":
         iea_config = load_iea_config("configs/iea.json")
-        global_best_individual, global_best_fitness, history, time_to_best = (
-            iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
-        )
+        (
+            global_best_individual,
+            global_best_fitness,
+            history,
+            time_to_best,
+            best_fitness_eval_count,
+        ) = iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
         data: dict[str, Any] = {
             "global_best_individual": global_best_individual,
             "global_best_fitness": global_best_fitness,
             "history": history,
             "time_to_best": time_to_best,
+            "best_fitness_eval_count": best_fitness_eval_count,
         }
-        filename = "results/p200/iea_result.json"
+        filename = "results/p600/iea_result.json"
         store_as_json(data, filename)
     elif args.opt == "MEMETIC":
         iea_config = load_iea_config("configs/iea.json")
         memetic_algorithm = MemeticAlgorithm(
             pedestrian_confs, clean_gird, simulator_config, iea_config
         )
-        best_overall_individual, best_overall_fitness, history, time_to_best = (
-            memetic_algorithm.run()
-        )
+        (
+            best_overall_individual,
+            best_overall_fitness,
+            history,
+            time_to_best,
+            best_fitness_eval_count,
+        ) = memetic_algorithm.run()
         data: dict[str, Any] = {
             "best_overall_individual": best_overall_individual,
             "best_overall_fitness": best_overall_fitness,
             "history": history,
             "time_to_best": time_to_best,
+            "best_fitness_eval_count": best_fitness_eval_count,
         }
-        filename = "results/p200/memetic_result.json"
+        filename = "results/p600/memetic_result.json"
         store_as_json(data, filename)
     elif args.opt == "QL":
         iea_config = load_iea_config("configs/iea.json")
@@ -159,7 +175,7 @@ def main():
             "history": history,
             "time_to_best": time_to_best,
         }
-        filename = "results/p200/ql_result.json"
+        filename = "results/p600/ql_result.json"
         store_as_json(data, filename)
     elif args.opt == "CAT-MA-AWM":
         iea_config = load_iea_config("configs/iea.json")
@@ -177,7 +193,7 @@ def main():
             "time_to_find_best_global_solution": time_to_find_best_global_solution,
             "history": history,
         }
-        filename = "results/p200/CAT_MA_AWM_result.json"
+        filename = "results/p600/CAT_MA_AWM_result.json"
         store_as_json(data, filename)
     elif args.opt == "GWO":
         blocked = {}
@@ -189,11 +205,11 @@ def main():
         (
             best_x,
             best_f,
-            n_evals,
             history_best,
             history_alpha,
             history_pop,
             best_found_time,
+            best_fitness_eval_count,
         ) = integer_enhanced_gwo(
             clean_gird,
             pedestrian_confs,
@@ -204,13 +220,13 @@ def main():
         data = {
             "best_x": best_x,
             "best_f": float(best_f),
-            "n_evals": int(n_evals),
             "history_best": history_best,
             "history_alpha": history_alpha,
             "history_pop": history_pop,
             "best_found_time": best_found_time,
+            "best_fitness_eval_count": best_fitness_eval_count,
         }
-        filename = "results/p200/gwo_result.json"
+        filename = "results/p600/gwo_result.json"
         store_as_json(data, filename)
     elif args.opt == "MISC":
         iea_config = load_iea_config("configs/iea.json")
@@ -231,7 +247,7 @@ def main():
         )
 
         result = opt.optimize()
-        filename = "results/p200/misc_result.json"
+        filename = "results/p600/misc_result.json"
         store_as_json(result, filename)
 
 

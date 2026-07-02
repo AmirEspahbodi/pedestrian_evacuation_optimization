@@ -127,6 +127,7 @@ class MemeticAlgorithm:
         best_overall_individual = None
         best_overall_fitness = float("inf")
         time_to_best = None
+        best_fitness_eval_count = 0
 
         # Main loop
         for episode in range(num_episodes):
@@ -145,6 +146,7 @@ class MemeticAlgorithm:
                 best_overall_fitness = current_best_fitness
                 best_overall_individual = self.population[current_best_idx]
                 time_to_best = time.perf_counter() - start_time
+                best_fitness_eval_count = self.psi_evaluator.get_evaluation_count()
 
             print(
                 f"Episode {episode + 1}/{num_episodes} | "
@@ -189,4 +191,10 @@ class MemeticAlgorithm:
         )
         final_best_fit = float(best_overall_fitness)
 
-        return final_best_ind, final_best_fit, history, time_to_best
+        return (
+            final_best_ind,
+            final_best_fit,
+            history,
+            time_to_best,
+            best_fitness_eval_count,
+        )

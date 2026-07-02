@@ -12,11 +12,12 @@ def greedy_algorithm(
     pedestrian_confs,
     gird,
     simulator_config: SimulationConfig,
-) -> Tuple[List[float], float, float]:
+) -> Tuple[List[float], float, float, int]:
     psi_evaluator = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
     omega_exit_width = simulator_config.omega
     perimeter_length = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
+    best_fitness_eval_count = 0
 
     # Precompute number of scan points
     eta = math.ceil(perimeter_length / omega_exit_width) if omega_exit_width > 0 else 0
@@ -60,6 +61,7 @@ def greedy_algorithm(
                 # If it's also the best overall, record the time
                 if current_eval_psi < best_overall_fitness:
                     best_overall_fitness = current_eval_psi
+                    best_fitness_eval_count = psi_evaluator.get_evaluation_count()
                     time_of_best = time.perf_counter() - start_time
 
             # Advance candidate, with wrap-around
@@ -71,4 +73,4 @@ def greedy_algorithm(
         E_solutions.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
-    return E_solutions, best_overall_fitness, time_of_best
+    return E_solutions, best_overall_fitness, time_of_best, best_fitness_eval_count
