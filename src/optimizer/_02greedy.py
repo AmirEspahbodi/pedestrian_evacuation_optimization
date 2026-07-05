@@ -17,10 +17,10 @@ def greedy_algorithm(
     omega_exit_width = simulator_config.omega
     perimeter_length = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
+    best_fitness_eval_count = 0
 
     # Precompute number of scan points
     eta = math.ceil(perimeter_length / omega_exit_width) if omega_exit_width > 0 else 0
-    num_evals_to_best = 0
 
     # Initialize solutions and fitness
     E_solutions: List[float] = []
@@ -61,8 +61,8 @@ def greedy_algorithm(
                 # If it's also the best overall, record the time
                 if current_eval_psi < best_overall_fitness:
                     best_overall_fitness = current_eval_psi
+                    best_fitness_eval_count = psi_evaluator.get_evaluation_count()
                     time_of_best = time.perf_counter() - start_time
-                    num_evals_to_best = psi_evaluator.get_evaluation_count()
 
             # Advance candidate, with wrap-around
             candidate_location += omega_exit_width
@@ -73,4 +73,4 @@ def greedy_algorithm(
         E_solutions.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
-    return E_solutions, best_overall_fitness, time_of_best, num_evals_to_best
+    return E_solutions, best_overall_fitness, time_of_best, best_fitness_eval_count

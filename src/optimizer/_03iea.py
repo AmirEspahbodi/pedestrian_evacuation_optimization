@@ -3,8 +3,10 @@ import random
 import time
 from typing import Any, Dict, List, Tuple
 
+from optimizer.psi import psi
+
 # Assuming these are available in your environment, otherwise we mock them for context
-from .common import FitnessEvaluator
+from .common import FitnessEvaluator, psi_function
 
 Individual = List[int]
 Population = List[Individual]
@@ -74,7 +76,6 @@ def iea_optimizer(
     perimeter_length = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
     p_mut = 1.0
-    num_evals_to_best = 0
 
     pop_size = 9
     num_islands = 6
@@ -84,6 +85,7 @@ def iea_optimizer(
     gamma = 0.05
 
     max_evals = 1024
+    best_fitness_eval_count = 0
 
     evalr = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
 
@@ -168,6 +170,7 @@ def iea_optimizer(
                 global_best_fitness = elite_f
                 global_best_individual = elite[:]
                 time_to_best = time.perf_counter() - start_time
+                best_fitness_eval_count = evalr.get_evaluation_count()
 
             # B. Offspring Generation
             # We generate (pop_size - 1) children because 1 spot is taken by elite
@@ -225,5 +228,5 @@ def iea_optimizer(
         global_best_fitness,
         history,
         time_to_best,
-        num_evals_to_best,
+        best_fitness_eval_count,
     )

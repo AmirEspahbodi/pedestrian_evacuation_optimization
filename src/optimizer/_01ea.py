@@ -83,6 +83,7 @@ def ea_algorithm(
     perimeter = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
     psi = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
+    best_fitness_eval_count = 0
 
     # 2. Load Optimized Hyperparameters
     popsize = 50
@@ -92,7 +93,6 @@ def ea_algorithm(
     # pr = ea_config.recombination_prob
     # gamma = ea_config.mutation_gamma
     maxevals = 1024
-    num_evals_to_best = 0
 
     history: Dict[str, List[float]] = {}
     start_time = time.perf_counter()
@@ -183,13 +183,13 @@ def ea_algorithm(
         # Check for new global best
         if population[0].fitness < best_overall.fitness:
             best_overall = population[0]
+            best_fitness_eval_count = psi.get_evaluation_count()
             time_to_best = time.perf_counter() - start_time
-            num_evals_to_best = psi.get_evaluation_count()
 
     return (
         best_overall.genes,
         best_overall.fitness,
         time_to_best,
         history,
-        num_evals_to_best,
+        best_fitness_eval_count,
     )
