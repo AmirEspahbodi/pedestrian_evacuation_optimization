@@ -161,7 +161,6 @@ def main():
             "best_overall_fitness": best_overall_fitness,
             "history": history,
             "time_to_best": time_to_best,
-            "num_evals_to_best": num_evals_to_best,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/memetic_result.json"
@@ -212,7 +211,7 @@ def main():
             history_pop,
             best_found_time,
             best_fitness_eval_count,
-            num_evals_to_best,
+            best_fitness_eval_count,
         ) = integer_enhanced_gwo(
             clean_gird,
             pedestrian_confs,
@@ -227,7 +226,6 @@ def main():
             "history_alpha": history_alpha,
             "history_pop": history_pop,
             "best_found_time": best_found_time,
-            "num_evals_to_best": num_evals_to_best,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/gwo_result.json"
