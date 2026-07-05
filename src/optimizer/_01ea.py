@@ -77,7 +77,7 @@ def _binary_tournament_selection(pop: List[Individual]) -> Individual:
 
 def ea_algorithm(
     pedestrian_confs, gird, simulator_config, ea_config
-) -> Tuple[List[int], float, float, Dict[str, List[float]]]:
+) -> Tuple[List[int], float, float, Dict[str, List[float]], int]:
     # 1. Setup Environment
     # Calculate perimeter correctly based on grid dimensions
     perimeter = 2 * (len(gird) + len(gird[0]))
@@ -92,6 +92,7 @@ def ea_algorithm(
     # pr = ea_config.recombination_prob
     # gamma = ea_config.mutation_gamma
     maxevals = 1024
+    num_evals_to_best = 0
 
     history: Dict[str, List[float]] = {}
     start_time = time.perf_counter()
@@ -183,5 +184,12 @@ def ea_algorithm(
         if population[0].fitness < best_overall.fitness:
             best_overall = population[0]
             time_to_best = time.perf_counter() - start_time
+            num_evals_to_best = psi.get_evaluation_count()
 
-    return best_overall.genes, best_overall.fitness, time_to_best, history
+    return (
+        best_overall.genes,
+        best_overall.fitness,
+        time_to_best,
+        history,
+        num_evals_to_best,
+    )

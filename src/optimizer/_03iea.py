@@ -64,7 +64,7 @@ def iea_optimizer(
     gird,
     simulator_config,
     iea_config,
-) -> Tuple[Individual, float, Dict[str, Any], float]:
+) -> Tuple[Individual, float, Dict[str, Any], float, int]:
     start_time = time.perf_counter()
 
     # --- Configuration Setup ---
@@ -74,6 +74,7 @@ def iea_optimizer(
     perimeter_length = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
     p_mut = 1.0
+    num_evals_to_best = 0
 
     pop_size = 9
     num_islands = 6
@@ -200,6 +201,7 @@ def iea_optimizer(
                     global_best_fitness = f
                     global_best_individual = child[:]
                     time_to_best = time.perf_counter() - start_time
+                    num_evals_to_best = evalr.get_evaluation_count()
 
                 # Safety Break inside island loop
                 if evalr.get_evaluation_count() >= max_evals:
@@ -218,4 +220,10 @@ def iea_optimizer(
             break
 
     # Return best solution found, best fitness, full history, and time
-    return global_best_individual, global_best_fitness, history, time_to_best
+    return (
+        global_best_individual,
+        global_best_fitness,
+        history,
+        time_to_best,
+        num_evals_to_best,
+    )

@@ -97,54 +97,73 @@ def main():
 
     if args.opt == "EA":
         ea_config = load_ea_config("configs/ea.json")
-        best_overall_genes, best_overall_fitness, time_to_best, history = ea_algorithm(
-            pedestrian_confs, clean_gird, simulator_config, ea_config
-        )
+        (
+            best_overall_genes,
+            best_overall_fitness,
+            time_to_best,
+            history,
+            num_evals_to_best,
+        ) = ea_algorithm(pedestrian_confs, clean_gird, simulator_config, ea_config)
         data = {
             "best_overall_genes": best_overall_genes,
             "best_overall_fitness": best_overall_fitness,
             "time_to_best": time_to_best,
             "history": history,
+            "num_evals_to_best": num_evals_to_best,
         }
         filename = "results/p200/ea_result.json"
         store_as_json(data, filename)
     elif args.opt == "GREEDY":
-        e_solutions, best_overall_fitness, time_of_best = greedy_algorithm(
-            pedestrian_confs, clean_gird, simulator_config
+        e_solutions, best_overall_fitness, time_of_best, num_evals_to_best = (
+            greedy_algorithm(pedestrian_confs, clean_gird, simulator_config)
         )
         data = {
             "e_solutions": e_solutions,
             "best_overall_fitness": best_overall_fitness,
             "time_of_best": time_of_best,
+            "num_evals_to_best": num_evals_to_best,
         }
         filename = "results/p200/greedy_result.json"
         store_as_json(data, filename)
     elif args.opt == "IEA":
         iea_config = load_iea_config("configs/iea.json")
-        global_best_individual, global_best_fitness, history, time_to_best = (
-            iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
-        )
+        (
+            global_best_individual,
+            global_best_fitness,
+            history,
+            time_to_best,
+            num_evals_to_best,
+        ) = iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
         data: dict[str, Any] = {
             "global_best_individual": global_best_individual,
             "global_best_fitness": global_best_fitness,
             "history": history,
             "time_to_best": time_to_best,
+            "num_evals_to_best": num_evals_to_best,
         }
         filename = "results/p200/iea_result.json"
         store_as_json(data, filename)
     elif args.opt == "MEMETIC":
         iea_config = load_iea_config("configs/iea.json")
         memetic_algorithm = MemeticAlgorithm(
-            pedestrian_confs, clean_gird, simulator_config, iea_config
+            pedestrian_confs,
+            clean_gird,
+            simulator_config,
+            iea_config,
         )
-        best_overall_individual, best_overall_fitness, history, time_to_best = (
-            memetic_algorithm.run()
-        )
+        (
+            best_overall_individual,
+            best_overall_fitness,
+            history,
+            time_to_best,
+            num_evals_to_best,
+        ) = memetic_algorithm.run()
         data: dict[str, Any] = {
             "best_overall_individual": best_overall_individual,
             "best_overall_fitness": best_overall_fitness,
             "history": history,
             "time_to_best": time_to_best,
+            "num_evals_to_best": num_evals_to_best,
         }
         filename = "results/p200/memetic_result.json"
         store_as_json(data, filename)
@@ -189,11 +208,11 @@ def main():
         (
             best_x,
             best_f,
-            n_evals,
             history_best,
             history_alpha,
             history_pop,
             best_found_time,
+            num_evals_to_best,
         ) = integer_enhanced_gwo(
             clean_gird,
             pedestrian_confs,
@@ -204,11 +223,11 @@ def main():
         data = {
             "best_x": best_x,
             "best_f": float(best_f),
-            "n_evals": int(n_evals),
             "history_best": history_best,
             "history_alpha": history_alpha,
             "history_pop": history_pop,
             "best_found_time": best_found_time,
+            "num_evals_to_best": num_evals_to_best,
         }
         filename = "results/p200/gwo_result.json"
         store_as_json(data, filename)
