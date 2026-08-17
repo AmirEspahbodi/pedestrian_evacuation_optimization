@@ -1,6 +1,5 @@
 import math
 import random
-import time
 from typing import List, Tuple
 
 from src.config import SimulationConfig
@@ -12,7 +11,7 @@ def greedy_algorithm(
     pedestrian_confs,
     gird,
     simulator_config: SimulationConfig,
-) -> Tuple[List[float], float, float, int]:
+) -> Tuple[List[float], float, int, int]:
     psi_evaluator = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
     omega_exit_width = simulator_config.omega
     perimeter_length = 2 * (len(gird) + len(gird[0]))
@@ -26,14 +25,12 @@ def greedy_algorithm(
     E_solutions: List[float] = []
     current_fitness = float("inf")
 
-    # Timer
-    start_time = time.perf_counter()
     best_overall_fitness = float("inf")
-    time_of_best = 0.0
+    best_generation = 0
 
     # Edge case: no exits to place
     if k_exits <= 0 or eta == 0:
-        return E_solutions, current_fitness, 0.0
+        return E_solutions, current_fitness, 0, best_fitness_eval_count
 
     print(f"k_exits = {k_exits}")
     print(f"eta = {eta}")
@@ -58,11 +55,11 @@ def greedy_algorithm(
                 best_psi_for_this_exit = current_eval_psi
                 chosen_exit_for_this_iteration = candidate_location
 
-                # If it's also the best overall, record the time
+                # If it's also the best overall, record the generation
                 if current_eval_psi < best_overall_fitness:
                     best_overall_fitness = current_eval_psi
                     best_fitness_eval_count = psi_evaluator.get_evaluation_count()
-                    time_of_best = time.perf_counter() - start_time
+                    best_generation = i
 
             # Advance candidate, with wrap-around
             candidate_location += omega_exit_width
@@ -73,4 +70,4 @@ def greedy_algorithm(
         E_solutions.append(chosen_exit_for_this_iteration)
         current_fitness = best_psi_for_this_exit
 
-    return E_solutions, best_overall_fitness, time_of_best, best_fitness_eval_count
+    return E_solutions, best_overall_fitness, best_generation, best_fitness_eval_count

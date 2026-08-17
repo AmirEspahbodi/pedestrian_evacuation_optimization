@@ -98,27 +98,27 @@ def main():
         (
             best_overall_genes,
             best_overall_fitness,
-            time_to_best,
+            best_generation,
             history,
             best_fitness_eval_count,
         ) = ea_algorithm(pedestrian_confs, clean_gird, simulator_config, ea_config)
         data = {
             "best_overall_genes": best_overall_genes,
             "best_overall_fitness": best_overall_fitness,
-            "time_to_best": time_to_best,
+            "best_generation": best_generation,
             "history": history,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/ea_result.json"
         store_as_json(data, filename)
     elif args.opt == "GREEDY":
-        e_solutions, best_overall_fitness, time_of_best, best_fitness_eval_count = (
+        e_solutions, best_overall_fitness, best_generation, best_fitness_eval_count = (
             greedy_algorithm(pedestrian_confs, clean_gird, simulator_config)
         )
         data = {
             "e_solutions": e_solutions,
             "best_overall_fitness": best_overall_fitness,
-            "time_of_best": time_of_best,
+            "best_generation": best_generation,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/greedy_result.json"
@@ -129,14 +129,14 @@ def main():
             global_best_individual,
             global_best_fitness,
             history,
-            time_to_best,
+            best_generation,
             best_fitness_eval_count,
         ) = iea_optimizer(pedestrian_confs, clean_gird, simulator_config, iea_config)
         data: dict[str, Any] = {
             "global_best_individual": global_best_individual,
             "global_best_fitness": global_best_fitness,
             "history": history,
-            "time_to_best": time_to_best,
+            "best_generation": best_generation,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/iea_result.json"
@@ -147,17 +147,17 @@ def main():
             pedestrian_confs, clean_gird, simulator_config, iea_config
         )
         (
-            best_overall_individual,
-            best_overall_fitness,
+            final_best_ind,
+            final_best_fit,
             history,
-            time_to_best,
+            generation_to_best,
             best_fitness_eval_count,
         ) = memetic_algorithm.run()
         data: dict[str, Any] = {
-            "best_overall_individual": best_overall_individual,
-            "best_overall_fitness": best_overall_fitness,
+            "final_best_ind": final_best_ind,
+            "final_best_fit": final_best_fit,
             "history": history,
-            "time_to_best": time_to_best,
+            "generation_to_best": generation_to_best,
             "best_fitness_eval_count": best_fitness_eval_count,
         }
         filename = "results/p200/memetic_result.json"
@@ -168,15 +168,15 @@ def main():
             best_global_solution_vector,
             best_global_solution_gen,
             best_global_solution_fitness_value,
-            time_to_find_best_global_solution,
+            evals_to_best_global_solution,
             history,
         ) = _05cat_ma_awm(clean_gird, pedestrian_confs, simulator_config, iea_config)
         data: dict[str, Any] = {
-            "best_global_solution_vector": best_global_solution_vector,
-            "best_global_solution_gen": best_global_solution_gen,
-            "best_global_solution_fitness_value": best_global_solution_fitness_value,
-            "time_to_find_best_global_solution": time_to_find_best_global_solution,
-            "history": history,
+            "best_global_solution_vector":best_global_solution_vector,
+            "best_global_solution_gen":best_global_solution_gen,
+            "best_global_solution_fitness_value":best_global_solution_fitness_value,
+            "evals_to_best_global_solution":evals_to_best_global_solution,
+            "history":history,
         }
         filename = "results/p200/CAT_MA_AWM_result.json"
         store_as_json(data, filename)
@@ -189,30 +189,28 @@ def main():
         seed = 42          # reproducibility
 
         # Run PA-DGWO
-        best_sol, best_fit = pa_dgwo(
+        (best_solution,
+        best_fitness,
+        history,
+        best_fitness_eval_count,
+        best_fitness_episode )= pa_dgwo(
             k=k,
             P=P,
             Q=Q,
+            gird=clean_gird,
+            pedestrian_confs=pedestrian_confs,
+            simulator_config=simulator_config,
             B_max=B_max,
             gamma=gamma,
             seed=seed
         )
-        best_x=None
-        best_f=None
-        history_best=None
-        history_alpha=None
-        history_pop=None
-        best_found_time=None
-        best_fitness_eval_count=None
 
         data = {
-            "best_x": best_x,
-            "best_f": float(best_f),
-            "history_best": history_best,
-            "history_alpha": history_alpha,
-            "history_pop": history_pop,
-            "best_found_time": best_found_time,
+            "best_solution": best_solution,
+            "best_fitness": best_fitness,
+            "history": history,
             "best_fitness_eval_count": best_fitness_eval_count,
+            "best_fitness_episode": best_fitness_episode,
         }
         filename = "results/p200/gwo_result.json"
         store_as_json(data, filename)
