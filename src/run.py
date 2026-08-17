@@ -12,9 +12,8 @@ from src.optimizer._03iea import iea_optimizer
 
 # from src.optimizer._04ql import q_learning_exit_optimizer
 from src.optimizer._05cat_ma_awm import _05cat_ma_awm
-from src.optimizer._06GWO import integer_enhanced_gwo
-from src.optimizer._07misc import GAConfig, MISOConfig, MISOIntegerOptimizer
-from src.optimizer._08memetic import MemeticAlgorithm
+from src.optimizer._06GWO import pa_dgwo
+from src.optimizer._04memetic import MemeticAlgorithm
 
 
 def store_as_json(data, filename):
@@ -48,11 +47,9 @@ def main():
             "EA",
             "IEA",
             "GREEDY",
-            "QL",
             "MEMETIC",
             "CAT-MA-AWM",
             "GWO",
-            "MISC",
         ],
         help="The optimization method (EA, IEA, GREEDY, QL, MEMETIC)",
     )
@@ -165,19 +162,6 @@ def main():
         }
         filename = "results/p200/memetic_result.json"
         store_as_json(data, filename)
-    # elif args.opt == "QL":
-    #     iea_config = load_iea_config("configs/iea.json")
-    #     best_solution, best_fitness, history, time_to_best = q_learning_exit_optimizer(
-    #         pedestrian_confs, clean_gird, simulator_config, iea_config
-    #     )
-    #     data: dict[str, Any] = {
-    #         "best_solution": best_solution,
-    #         "best_fitness": best_fitness,
-    #         "history": history,
-    #         "time_to_best": time_to_best,
-    #     }
-    #     filename = "results/p200/ql_result.json"
-    #     store_as_json(data, filename)
     elif args.opt == "CAT-MA-AWM":
         iea_config = load_iea_config("configs/iea.json")
         (
@@ -197,28 +181,30 @@ def main():
         filename = "results/p200/CAT_MA_AWM_result.json"
         store_as_json(data, filename)
     elif args.opt == "GWO":
-        blocked = {}
-        iea_config = load_iea_config("configs/iea.json")
+        k = 3              # number of emergency exits
+        P = 400            # perimeter length (e.g., 100x100 grid)
+        Q = 5              # exit width in cells
+        B_max = 600        # evaluation budget
+        gamma = 2.0        # nonlinear decay shape
+        seed = 42          # reproducibility
 
-        def valid(x: np.ndarray) -> bool:
-            return all(int(v) not in blocked for v in x)
-
-        (
-            best_x,
-            best_f,
-            history_best,
-            history_alpha,
-            history_pop,
-            best_found_time,
-            best_fitness_eval_count,
-            best_fitness_eval_count,
-        ) = integer_enhanced_gwo(
-            clean_gird,
-            pedestrian_confs,
-            simulator_config,
-            iea_config,
-            valid_fn=valid,
+        # Run PA-DGWO
+        best_sol, best_fit = pa_dgwo(
+            k=k,
+            P=P,
+            Q=Q,
+            B_max=B_max,
+            gamma=gamma,
+            seed=seed
         )
+        best_x=None
+        best_f=None
+        history_best=None
+        history_alpha=None
+        history_pop=None
+        best_found_time=None
+        best_fitness_eval_count=None
+
         data = {
             "best_x": best_x,
             "best_f": float(best_f),
@@ -230,27 +216,7 @@ def main():
         }
         filename = "results/p200/gwo_result.json"
         store_as_json(data, filename)
-    elif args.opt == "MISC":
-        iea_config = load_iea_config("configs/iea.json")
 
-        def is_valid(x: np.ndarray) -> bool:
-            return True
-
-        opt = MISOIntegerOptimizer(
-            clean_gird,
-            pedestrian_confs,
-            simulator_config,
-            iea_config,
-            config=MISOConfig(nmax=250, enable_local_search=True),
-            ga_config=GAConfig(pop_size=70, generations=70),
-            seed=123,
-            is_valid_fn=is_valid,
-            repair_fn=None,
-        )
-
-        result = opt.optimize()
-        filename = "results/p200/misc_result.json"
-        store_as_json(result, filename)
 
 
 if __name__ == "__main__":

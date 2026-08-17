@@ -1,5 +1,6 @@
 import numpy as np
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any, Dict
+from .common import FitnessEvaluator
 
 
 def pa_dgwo(
@@ -7,13 +8,16 @@ def pa_dgwo(
     P: int,
     Q: int,
     B_max: int,
+    pedestrian_confs,
+    gird,
+    simulator_config,
     gamma: float = 2.0,
     lambda_init: float = 0.5,
     lambda_final: float = 0.3,
     q_neighbors: int = 5,
     p_local: float = 0.3,
-    seed: Optional[int] = None
-) -> Tuple[np.ndarray, float]:
+    seed: Optional[int] = None,
+) -> Tuple[List[int], float, List[List[List[Any]]], int, int]:
     """
     Perimeter-Aware Discrete Grey Wolf Optimizer (PA-DGWO).
 
@@ -46,12 +50,27 @@ def pa_dgwo(
         Best solution found (vector of k integers in [0, P)).
     best_fitness : float
         Fitness value of the best solution.
+    history : List[List[Tuple[np.ndarray, float]]]
+        Evaluated individuals and their fitness values grouped by episode (index 0 is init).
+    best_fitness_eval_count : int
+        Evaluation count when the best fitness value was discovered.
+    best_fitness_episode : int
+        Episode index in which the best fitness value was discovered (0 for init).
     """
+
+    evalr = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
 
     if seed is not None:
         rng = np.random.default_rng(seed)
     else:
         rng = np.random.default_rng()
+
+    # Tracking variables
+    history: List[List[Tuple[np.ndarray, float]]] = []
+    best_fitness = float("inf")
+    best_solution: Optional[np.ndarray] = None
+    best_fitness_eval_count = 0
+    best_fitness_episode = 0
 
     # ------------------------------------------------------------------
     # HELPER FUNCTIONS
@@ -97,15 +116,12 @@ def pa_dgwo(
         Ensures all exits are non-overlapping on the circular perimeter.
         """
         x = x.copy()
-        # Check if problem is feasible
         if k * Q >= P:
-            # Infeasible: exits cannot fit. Return as-is (should not happen).
             return x
 
         max_repairs = 100
         for _ in range(max_repairs):
             overlap_found = False
-            # Sort positions circularly starting from the smallest
             order = np.argsort(x)
             sorted_x = x[order].copy()
 
@@ -113,7 +129,6 @@ def pa_dgwo(
                 for j in range(i + 1, k):
                     if circular_distance(sorted_x[i], sorted_x[j]) < Q:
                         overlap_found = True
-                        # Shift the second exit clockwise by the deficit
                         deficit = Q - circular_distance(sorted_x[i], sorted_x[j])
                         sorted_x[j] = (sorted_x[j] + deficit) % P
 
@@ -122,7 +137,6 @@ def pa_dgwo(
             if not overlap_found:
                 break
 
-        # Final verification and brute-force fix if needed
         for _ in range(50):
             any_overlap = False
             for i in range(k):
@@ -158,11 +172,9 @@ def pa_dgwo(
             for i in range(n_archive)
         ])
 
-        # Select q nearest neighbors
         q_actual = min(q, n_archive)
         nn_indices = np.argpartition(distances, q_actual - 1)[:q_actual]
 
-        # Inverse distance weighting
         eps = 1e-6
         weights = np.array([
             1.0 / (distances[idx] + eps) for idx in nn_indices
@@ -174,7 +186,6 @@ def pa_dgwo(
         """
         Perimeter-Coverage Initialization (PCI).
         Generates n_wolves solutions with exits spread around the perimeter.
-        Returns array of shape (n_wolves, k) with integer positions.
         """
         solutions = np.zeros((n_wolves, k), dtype=int)
         delta_0 = max(1, P // (4 * k))
@@ -186,7 +197,6 @@ def pa_dgwo(
                 jitter = int(rng.integers(-delta_0, delta_0 + 1))
                 solutions[i, j] = (base + offset + jitter) % P
 
-            # Repair overlaps
             solutions[i] = repair_overlaps(solutions[i])
 
         return solutions
@@ -206,7 +216,6 @@ def pa_dgwo(
         new_pos = np.zeros(k, dtype=int)
 
         for j in range(k):
-            # Generate random coefficients for each leader
             targets = []
 
             for leader in [alpha, beta, delta]:
@@ -216,13 +225,9 @@ def pa_dgwo(
                 A_j = 2.0 * a_val * r1 - a_val
                 C_j = 2.0 * r2
 
-                # Signed circular displacement from wolf to leader
                 delta_j = signed_circular_displacement(int(wolf[j]), int(leader[j]))
-
-                # Encirclement distance
                 D_j = abs(C_j * delta_j)
 
-                # Circular position update
                 sign_delta = 1 if delta_j >= 0 else -1
                 if delta_j == 0:
                     sign_delta = 0
@@ -231,8 +236,6 @@ def pa_dgwo(
                 target_j = (int(leader[j]) - displacement) % P
                 targets.append(target_j)
 
-            # Circular averaging of three targets
-            # Check if targets are too spread (> P/3 apart)
             max_spread = max(
                 circular_distance(targets[0], targets[1]),
                 circular_distance(targets[1], targets[2]),
@@ -240,7 +243,6 @@ def pa_dgwo(
             )
 
             if max_spread > P // 3:
-                # Fallback: select target closest to current wolf position
                 dists_to_wolf = [circular_distance(t, int(wolf[j])) for t in targets]
                 new_pos[j] = targets[int(np.argmin(dists_to_wolf))]
             else:
@@ -249,39 +251,42 @@ def pa_dgwo(
         return new_pos
 
     # ------------------------------------------------------------------
-    # PHASE 0: INITIALIZATION
+    # PHASE 0: INITIALIZATION (Episode 0)
     # ------------------------------------------------------------------
 
-    # Initial pack size
     N0 = 2 * k + 6
-
-    # Estimated max iterations
     T = max(1, B_max // N0)
 
-    # Initialize wolves using Perimeter-Coverage Initialization
     wolves = perimeter_coverage_init(N0)
 
-    # Evaluate all initial wolves
     archive_X = []
     archive_f = []
-    B_used = 0
+    init_episode_history: List[Tuple[np.ndarray, float]] = []
 
     for i in range(N0):
-        if B_used >= B_max:
+        if evalr.get_evaluation_count() >= B_max:
             break
-        fitness_val = psi_evaluate(wolves[i].tolist())
+        fitness_val = evalr.evaluate(wolves[i].tolist())
+        current_eval_count = evalr.get_evaluation_count()
+
         archive_X.append(wolves[i].copy())
         archive_f.append(fitness_val)
-        B_used += 1
+        init_episode_history.append((wolves[i].copy(), fitness_val))
 
-    # Convert archive to arrays
+        if fitness_val < best_fitness:
+            best_fitness = fitness_val
+            best_solution = wolves[i].copy()
+            best_fitness_eval_count = current_eval_count
+            best_fitness_episode = 0
+
+    history.append(init_episode_history)
+
     if len(archive_X) == 0:
         raise ValueError("Budget too small to evaluate even one solution.")
 
     archive_X_arr = np.array(archive_X)
     archive_f_arr = np.array(archive_f)
 
-    # Sort by fitness to assign hierarchy
     sorted_indices = np.argsort(archive_f_arr)
     alpha_idx = sorted_indices[0]
     beta_idx = sorted_indices[1] if len(sorted_indices) > 1 else sorted_indices[0]
@@ -294,49 +299,37 @@ def pa_dgwo(
     f_beta = archive_f_arr[beta_idx]
     f_delta = archive_f_arr[delta_idx]
 
-    # Current pack (working population)
     current_wolves = wolves.copy()
     current_fitness = archive_f_arr[:N0].copy()
 
     t = 0  # iteration counter
 
     # ------------------------------------------------------------------
-    # PHASE 1-3: MAIN LOOP
+    # PHASE 1-3: MAIN LOOP (Episodes 1 to T)
     # ------------------------------------------------------------------
 
-    while B_used < B_max and t < T:
+    while evalr.get_evaluation_count() < B_max and t < T:
         t += 1
 
-        # --- Parameter Update (Budget-Aware Nonlinear Schedule) ---
-        progress = t / T  # in (0, 1]
+        progress = t / T
         a_val = 2.0 * (1.0 - progress ** gamma)
-
-        # Adaptive pack size
         N_t = max(2 * k + 2, int(np.floor(N0 * (1.0 - progress) ** 0.5)))
-
-        # Screening threshold (linearly interpolated)
         lambda_t = lambda_init + (lambda_final - lambda_init) * progress
 
-        # --- Generate Candidates ---
+        # Generate Candidates
         candidates = []
-        n_omegas = max(1, N_t - 3)  # wolves excluding alpha, beta, delta roles
+        n_omegas = max(1, N_t - 3)
 
         for i in range(n_omegas):
-            # Select a random wolf from current pack as the "omega" to update
             wolf_idx = rng.integers(0, len(current_wolves))
             wolf = current_wolves[wolf_idx].copy()
 
-            # Generate new candidate via Circular Three-Leader Hunting
             candidate = generate_candidate(wolf, x_alpha, x_beta, x_delta, a_val)
-
-            # Apply overlap repair
             candidate = repair_overlaps(candidate)
-
             candidates.append(candidate)
 
-        # --- Local Perturbation (Phase 3: last 30% of iterations) ---
+        # Local Perturbation
         if progress > 0.7 and rng.random() < p_local and len(candidates) > 0:
-            # Replace one candidate with a local perturbation of alpha
             pert_idx = rng.integers(0, len(candidates))
             pert_candidate = x_alpha.copy()
             j_rand = rng.integers(0, k)
@@ -345,7 +338,7 @@ def pa_dgwo(
             pert_candidate = repair_overlaps(pert_candidate)
             candidates[pert_idx] = pert_candidate
 
-        # --- Surrogate Screening ---
+        # Surrogate Screening
         surviving_candidates = []
         n_archive = len(archive_f_arr)
 
@@ -353,35 +346,42 @@ def pa_dgwo(
             f_worst = np.max(archive_f_arr)
             for cand in candidates:
                 predicted_f = surrogate_predict(cand, archive_X_arr, archive_f_arr, q_neighbors)
-                # Accept if predicted fitness is not too bad
                 if predicted_f < f_alpha + lambda_t * (f_worst - f_alpha):
                     surviving_candidates.append(cand)
-                # If rejected, skip evaluation (saves budget)
         else:
-            # Not enough data for surrogate; evaluate all
             surviving_candidates = candidates
 
-        # --- Evaluate Surviving Candidates ---
+        # Evaluate Surviving Candidates
         new_evaluations_X = []
         new_evaluations_f = []
+        current_episode_history: List[Tuple[np.ndarray, float]] = []
 
         for cand in surviving_candidates:
-            if B_used >= B_max:
+            if evalr.get_evaluation_count() >= B_max:
                 break
-            fitness_val = psi_evaluate(cand.tolist())
+            fitness_val = evalr.evaluate(cand.tolist())
+            current_eval_count = evalr.get_evaluation_count()
+
             new_evaluations_X.append(cand.copy())
             new_evaluations_f.append(fitness_val)
-            B_used += 1
+            current_episode_history.append((cand.copy(), fitness_val))
 
-        # --- Update Archive ---
+            if fitness_val < best_fitness:
+                best_fitness = fitness_val
+                best_solution = cand.copy()
+                best_fitness_eval_count = current_eval_count
+                best_fitness_episode = t
+
+        history.append(current_episode_history)
+
+        # Update Archive
         if len(new_evaluations_X) > 0:
             new_X_arr = np.array(new_evaluations_X)
             new_f_arr = np.array(new_evaluations_f)
             archive_X_arr = np.vstack([archive_X_arr, new_X_arr])
             archive_f_arr = np.concatenate([archive_f_arr, new_f_arr])
 
-        # --- Update Hierarchy ---
-        # Find top 3 from entire archive
+        # Update Hierarchy
         sorted_all = np.argsort(archive_f_arr)
         alpha_idx = sorted_all[0]
         beta_idx = sorted_all[1] if len(sorted_all) > 1 else sorted_all[0]
@@ -392,76 +392,48 @@ def pa_dgwo(
         x_delta = archive_X_arr[delta_idx].copy()
         f_alpha = archive_f_arr[alpha_idx]
 
-        # --- Update Working Pack ---
-        # Keep the best N_t solutions from archive as current wolves
+        # Update Working Pack
         top_indices = sorted_all[:N_t]
         current_wolves = archive_X_arr[top_indices].copy()
         current_fitness = archive_f_arr[top_indices].copy()
 
-        # --- Budget Check ---
-        if B_used >= B_max:
+        if evalr.get_evaluation_count() >= B_max:
             break
 
     # ------------------------------------------------------------------
     # PHASE 4: TERMINATION
     # ------------------------------------------------------------------
 
-    best_solution = x_alpha.copy()
-    best_fitness = f_alpha
+    if best_solution is None:
+        best_solution = x_alpha.copy()
+        best_fitness = f_alpha
 
-    return best_solution, best_fitness
+    # ------------------------------------------------------------------
+    # PHASE 4: TERMINATION & JSON SERIALIZATION PATCH
+    # ------------------------------------------------------------------
 
+    if best_solution is None:
+        best_solution = x_alpha.copy()
+        best_fitness = f_alpha
 
-# ======================================================================
-# USAGE EXAMPLE (fitness function stub for testing)
-# ======================================================================
+    # Convert all outputs into native Python types for JSON compatibility
+    best_solution_json = [int(x) for x in best_solution]
+    best_fitness_json = float(best_fitness)
+    best_fitness_eval_count_json = int(best_fitness_eval_count)
+    best_fitness_episode_json = int(best_fitness_episode)
 
-def psi_evaluate(solution: List[int]) -> float:
-    """
-    Placeholder fitness function.
-    Replace this with the actual evacuation simulator call.
+    history_json = [
+        [
+            [[int(x) for x in ind], float(fit)]
+            for ind, fit in episode
+        ]
+        for episode in history
+    ]
 
-    Parameters
-    ----------
-    solution : list of int
-        Vector of k integers, each in [0, perimeter_length).
-        Represents start positions of emergency exits.
-
-    Returns
-    -------
-    float
-        Fitness value (lower is better).
-    """
-    # --- REPLACE THIS WITH YOUR ACTUAL SIMULATOR CALL ---
-    # Example: return your_simulator.evaluate(solution)
-    raise NotImplementedError(
-        "Replace this stub with the actual psi_evaluate fitness function."
+    return (
+        best_solution_json,
+        best_fitness_json,
+        history_json,
+        best_fitness_eval_count_json,
+        best_fitness_episode_json,
     )
-
-
-# ======================================================================
-# MAIN ENTRY POINT
-# ======================================================================
-
-if __name__ == "__main__":
-
-    # Problem parameters
-    k = 3              # number of emergency exits
-    P = 400            # perimeter length (e.g., 100x100 grid)
-    Q = 5              # exit width in cells
-    B_max = 600        # evaluation budget
-    gamma = 2.0        # nonlinear decay shape
-    seed = 42          # reproducibility
-
-    # Run PA-DGWO
-    best_sol, best_fit = pa_dgwo(
-        k=k,
-        P=P,
-        Q=Q,
-        B_max=B_max,
-        gamma=gamma,
-        seed=seed
-    )
-
-    print(f"Best solution (exit positions): {best_sol.tolist()}")
-    print(f"Best fitness: {best_fit:.6f}")

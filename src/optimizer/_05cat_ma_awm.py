@@ -14,9 +14,7 @@ def get_robust_optimizer(num_exits_k, perimeter_max=400, seed=42):
     c_space = []
 
     initial_mean = np.full(num_exits_k, perimeter_max / 2.0)
-
     initial_sigma = perimeter_max / 5.0
-
     algo_pop_size = 16 + num_exits_k
 
     optimizer = CatCMAwM(
@@ -42,7 +40,6 @@ def _05cat_ma_awm(
     perimeter_max = 2 * (len(grid) + len(grid[0]))
 
     # --- SETTINGS ---
-    # Increased to allow the covariance matrix to adapt to the geometry
     max_generations = 60
 
     # --- INITIALIZE EVALUATOR ---
@@ -63,7 +60,9 @@ def _05cat_ma_awm(
     best_global_solution_fitness_value = float("inf")
     best_global_solution_gen = 0
     start_time = time.time()
-    time_to_find_best_global_solution = 0.0
+
+    total_evaluations = 0
+    evals_to_best_global_solution = 0
 
     # --- OPTIMIZATION LOOP ---
     for generation in range(max_generations):
@@ -72,8 +71,9 @@ def _05cat_ma_awm(
 
         for _ in range(optimizer.population_size):
             sol = optimizer.ask()
-
             exit_positions = sol.z
+
+            total_evaluations += 1
 
             try:
                 fitness_value = evaluator.evaluate(exit_positions)
@@ -86,7 +86,7 @@ def _05cat_ma_awm(
                 best_global_solution_fitness_value = fitness_value
                 best_global_solution_vector = exit_positions
                 best_global_solution_gen = generation
-                time_to_find_best_global_solution = time.time() - start_time
+                evals_to_best_global_solution = total_evaluations
 
             solutions.append((sol, fitness_value))
             current_gen_fitnesses.append(fitness_value)
@@ -113,6 +113,6 @@ def _05cat_ma_awm(
         best_global_solution_vector,
         best_global_solution_gen,
         float(best_global_solution_fitness_value),
-        float(time_to_find_best_global_solution),
+        int(evals_to_best_global_solution),
         history,
     )

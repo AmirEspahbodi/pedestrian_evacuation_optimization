@@ -2,16 +2,10 @@ import math
 import random
 import time
 from typing import Any, Dict, List, Tuple
-
-from optimizer.psi import psi
-
-# Assuming these are available in your environment, otherwise we mock them for context
-from .common import FitnessEvaluator, psi_function
+from .common import FitnessEvaluator
 
 Individual = List[int]
 Population = List[Individual]
-
-# --- 1. Improved Helper Functions ---
 
 
 def set_based_recombination(parent1: Individual, parent2: Individual) -> Individual:
@@ -66,13 +60,8 @@ def iea_optimizer(
     gird,
     simulator_config,
     iea_config,
-) -> Tuple[Individual, float, Dict[str, Any], float, int]:
-    start_time = time.perf_counter()
-
+) -> Tuple[Individual, float, Dict[str, Any], int, int]:
     # --- Configuration Setup ---
-    # We override the user config with the OPTIMAL values for this specific problem
-    # to guarantee the 100 generation convergence and stability.
-
     perimeter_length = 2 * (len(gird) + len(gird[0]))
     k_exits = simulator_config.numEmergencyExits
     p_mut = 1.0
@@ -91,6 +80,7 @@ def iea_optimizer(
 
     # Prepare storage
     generation = 0
+    best_generation = 0
     history: Dict[str, Dict[str, List[float]]] = {
         f"island{i + 1}": {} for i in range(num_islands)
     }
@@ -111,7 +101,6 @@ def iea_optimizer(
     # Determine initial global best
     global_best_fitness = math.inf
     global_best_individual: Individual = []
-    time_to_best = time.perf_counter() - start_time
 
     for isl in islands:
         idx = min(range(len(isl["fitnesses"])), key=isl["fitnesses"].__getitem__)
@@ -119,7 +108,8 @@ def iea_optimizer(
         if fit < global_best_fitness:
             global_best_fitness = fit
             global_best_individual = isl["population"][idx][:]
-            time_to_best = time.perf_counter() - start_time
+            best_generation = generation
+            best_fitness_eval_count = evalr.get_evaluation_count()
 
     # --- Main Evolutionary Loop ---
     while evalr.get_evaluation_count() < max_evals:
@@ -149,7 +139,6 @@ def iea_optimizer(
 
                 isl["population"][worst_idxs[i]] = migrant[:]
                 # Force re-evaluation or set to inf to ensure it doesn't dominate falsely
-                # (Ideally, we know the fitness, but let's keep it safe)
                 isl["fitnesses"][worst_idxs[i]] = float("inf")
 
         generation += 1
@@ -169,7 +158,7 @@ def iea_optimizer(
             if elite_f < global_best_fitness:
                 global_best_fitness = elite_f
                 global_best_individual = elite[:]
-                time_to_best = time.perf_counter() - start_time
+                best_generation = generation
                 best_fitness_eval_count = evalr.get_evaluation_count()
 
             # B. Offspring Generation
@@ -203,8 +192,8 @@ def iea_optimizer(
                 if f < global_best_fitness:
                     global_best_fitness = f
                     global_best_individual = child[:]
-                    time_to_best = time.perf_counter() - start_time
-                    num_evals_to_best = evalr.get_evaluation_count()
+                    best_generation = generation
+                    best_fitness_eval_count = evalr.get_evaluation_count()
 
                 # Safety Break inside island loop
                 if evalr.get_evaluation_count() >= max_evals:
@@ -222,11 +211,11 @@ def iea_optimizer(
         if evalr.get_evaluation_count() >= max_evals:
             break
 
-    # Return best solution found, best fitness, full history, and time
+    # Return best solution found, best fitness, full history, generation reached, and eval count
     return (
         global_best_individual,
         global_best_fitness,
         history,
-        time_to_best,
+        best_generation,
         best_fitness_eval_count,
     )

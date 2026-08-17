@@ -1,6 +1,5 @@
 import math
 import random
-import time
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -77,7 +76,7 @@ def _binary_tournament_selection(pop: List[Individual]) -> Individual:
 
 def ea_algorithm(
     pedestrian_confs, gird, simulator_config, ea_config
-) -> Tuple[List[int], float, float, Dict[str, List[float]], int]:
+) -> Tuple[List[int], float, int, Dict[str, List[float]], int]:
     # 1. Setup Environment
     # Calculate perimeter correctly based on grid dimensions
     perimeter = 2 * (len(gird) + len(gird[0]))
@@ -95,8 +94,7 @@ def ea_algorithm(
     maxevals = 1024
 
     history: Dict[str, List[float]] = {}
-    start_time = time.perf_counter()
-    time_to_best = 0.0
+    best_generation = 0
 
     # 3. Initialization
     generation = 0
@@ -121,7 +119,7 @@ def ea_algorithm(
     # Sort: best (lowest fitness) at index 0
     population.sort()
     best_overall = population[0]
-    time_to_best = time.perf_counter() - start_time
+    best_generation = 0
 
     # 4. Main Evolutionary Loop
     while psi.get_evaluation_count() < maxevals:
@@ -184,12 +182,12 @@ def ea_algorithm(
         if population[0].fitness < best_overall.fitness:
             best_overall = population[0]
             best_fitness_eval_count = psi.get_evaluation_count()
-            time_to_best = time.perf_counter() - start_time
+            best_generation = generation
 
     return (
         best_overall.genes,
         best_overall.fitness,
-        time_to_best,
+        best_generation,
         history,
         best_fitness_eval_count,
     )
