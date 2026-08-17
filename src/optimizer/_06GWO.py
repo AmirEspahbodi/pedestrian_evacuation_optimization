@@ -1,411 +1,467 @@
-from __future__ import annotations
-
-import time  # <--- Added for tracking discovery time
-from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
-
 import numpy as np
-
-from .common import FitnessEvaluator, psi_function
-
-ArrayLikeInt = Union[np.ndarray, Sequence[int]]
-Bounds = Union[Tuple[int, int], Sequence[Tuple[int, int]]]
+from typing import List, Tuple, Optional
 
 
-def integer_enhanced_gwo(
-    gird,
-    pedestrian_confs,
-    simulator_config,
-    iea_config,
-    *,
-    n_wolves: int = 16,
-    max_iters: int = 80,
-    seed: Optional[int] = None,
-    # Feasibility handling:
-    valid_fn: Optional[Callable[[np.ndarray], bool]] = None,
-    repair_fn: Optional[Callable[[np.ndarray, np.random.Generator], np.ndarray]] = None,
-    penalty_value: float = 1e30,
-    # Optional per-dimension allowed integer sets:
-    choices: Optional[Sequence[Sequence[int]]] = None,
-    # GWO control:
-    a_schedule: str = "linear",
-    # Enhancements:
-    opposition_init: bool = True,
-    epd_rate: float = 0.20,
-    epd_period: int = 5,
-    restart_on_stall: bool = True,
-    stall_patience: int = 15,
-    local_search_steps: int = 15,
-    verbose: bool = False,
-):
+def pa_dgwo(
+    k: int,
+    P: int,
+    Q: int,
+    B_max: int,
+    gamma: float = 2.0,
+    lambda_init: float = 0.5,
+    lambda_final: float = 0.3,
+    q_neighbors: int = 5,
+    p_local: float = 0.3,
+    seed: Optional[int] = None
+) -> Tuple[np.ndarray, float]:
     """
-    Integer / constraint-aware Enhanced Grey Wolf Optimizer (IE-GWO).
+    Perimeter-Aware Discrete Grey Wolf Optimizer (PA-DGWO).
+
+    Parameters
+    ----------
+    k : int
+        Number of emergency exits (decision vector length), k in {2,3,4,5}.
+    P : int
+        Perimeter length (total number of cells on the perimeter).
+    Q : int
+        Width of each emergency exit (number of cells it occupies).
+    B_max : int
+        Maximum evaluation budget.
+    gamma : float
+        Shape parameter for nonlinear decay of exploration parameter 'a'.
+    lambda_init : float
+        Initial screening threshold for surrogate.
+    lambda_final : float
+        Final screening threshold for surrogate.
+    q_neighbors : int
+        Number of nearest neighbors for surrogate prediction.
+    p_local : float
+        Probability of local perturbation in Phase 3.
+    seed : int or None
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    best_solution : np.ndarray of shape (k,), dtype int
+        Best solution found (vector of k integers in [0, P)).
+    best_fitness : float
+        Fitness value of the best solution.
     """
 
-    # --- 1. Start Timer ---
-    t0 = time.time()
-
-    fitness_fn = FitnessEvaluator(gird, pedestrian_confs, simulator_config)
-    dim = simulator_config.numEmergencyExits
-    bounds = (0, 2 * (len(gird) + len(gird[0])))
-    max_evals = 1310
-
-    if dim <= 0:
-        raise ValueError("dim must be positive.")
-    if n_wolves < 4:
-        raise ValueError("n_wolves should be >= 4 (need alpha/beta/delta + others).")
-
-    rng = np.random.default_rng(seed)
-
-    # Normalize bounds to per-dimension arrays
-    if (
-        isinstance(bounds, tuple)
-        and len(bounds) == 2
-        and all(isinstance(v, (int, np.integer)) for v in bounds)
-    ):
-        lb = np.full(dim, int(bounds[0]), dtype=int)
-        ub = np.full(dim, int(bounds[1]), dtype=int)
+    if seed is not None:
+        rng = np.random.default_rng(seed)
     else:
-        b = list(bounds)  # type: ignore[arg-type]
-        if len(b) != dim:
-            raise ValueError("If bounds is per-dimension, it must have length == dim.")
-        lb = np.array([int(x[0]) for x in b], dtype=int)
-        ub = np.array([int(x[1]) for x in b], dtype=int)
+        rng = np.random.default_rng()
 
-    if np.any(lb > ub):
-        raise ValueError("Lower bound > upper bound in bounds.")
+    # ------------------------------------------------------------------
+    # HELPER FUNCTIONS
+    # ------------------------------------------------------------------
 
-    # Prepare choices arrays (sorted, unique)
-    choices_arr: Optional[List[np.ndarray]] = None
-    if choices is not None:
-        if len(choices) != dim:
-            raise ValueError("choices must have length == dim.")
-        choices_arr = []
-        for j in range(dim):
-            arr = np.array(list(choices[j]), dtype=int)
-            arr = np.unique(arr)
-            arr.sort()
-            arr = arr[(arr >= lb[j]) & (arr <= ub[j])]
-            if arr.size == 0:
-                raise ValueError(f"choices[{j}] has no values within bounds.")
-            choices_arr.append(arr)
+    def circular_distance(a: int, b: int) -> int:
+        """Circular distance between two positions on perimeter of length P."""
+        diff = abs(a - b)
+        return min(diff, P - diff)
 
-    def _snap_to_choices(x_int: np.ndarray) -> np.ndarray:
-        if choices_arr is None:
-            return x_int
-        y = x_int.copy()
-        for j in range(dim):
-            arr = choices_arr[j]
-            v = int(y[j])
-            idx = int(np.searchsorted(arr, v))
-            if idx <= 0:
-                y[j] = arr[0]
-            elif idx >= arr.size:
-                y[j] = arr[-1]
-            else:
-                lo = arr[idx - 1]
-                hi = arr[idx]
-                y[j] = lo if (v - lo) <= (hi - v) else hi
-        return y
-
-    def _project_integer(x_cont: np.ndarray) -> np.ndarray:
-        x_int = np.rint(x_cont).astype(int)
-        x_int = np.clip(x_int, lb, ub)
-        x_int = _snap_to_choices(x_int)
-        return x_int
-
-    def _is_valid(x_int: np.ndarray) -> bool:
-        if np.any(x_int < lb) or np.any(x_int > ub):
-            return False
-        if valid_fn is None:
-            return True
-        try:
-            return bool(valid_fn(x_int))
-        except Exception:
-            return False
-
-    def _attempt_repair(x_int: np.ndarray) -> np.ndarray:
-        x0 = x_int.copy()
-        if repair_fn is not None:
-            try:
-                xr = np.asarray(repair_fn(x0.copy(), rng), dtype=int)
-                xr = np.clip(xr, lb, ub)
-                xr = _snap_to_choices(xr)
-                if _is_valid(xr):
-                    return xr
-            except Exception:
-                pass
-
-        span = (ub - lb).astype(int)
-        max_step = np.maximum(2, (0.10 * span).astype(int))
-        for _ in range(40):
-            step = rng.integers(-max_step, max_step + 1, size=dim)
-            xr = np.clip(x0 + step, lb, ub)
-            xr = _snap_to_choices(xr)
-            if _is_valid(xr):
-                return xr
-
-        for _ in range(200):
-            if choices_arr is None:
-                xr = rng.integers(lb, ub + 1, size=dim, dtype=int)
-            else:
-                xr = np.array(
-                    [rng.choice(choices_arr[j]) for j in range(dim)], dtype=int
-                )
-            if _is_valid(xr):
-                return xr
-        return x0
-
-    cache: Dict[Tuple[int, ...], float] = {}
-    n_evals = 0
-
-    def _safe_eval(x_int: np.ndarray) -> float:
-        nonlocal n_evals
-        key = tuple(int(v) for v in x_int.tolist())
-        if key in cache:
-            return cache[key]
-        if not _is_valid(x_int):
-            cache[key] = float(penalty_value)
-            return cache[key]
-        try:
-            val = float(fitness_fn.evaluate(x_int.copy()))
-        except Exception:
-            val = float(penalty_value)
-        cache[key] = val
-        n_evals += 1
-        return val
-
-    def _init_population() -> np.ndarray:
-        if choices_arr is None:
-            X = rng.integers(lb, ub + 1, size=(n_wolves, dim), dtype=int)
+    def signed_circular_displacement(a: int, b: int) -> int:
+        """
+        Signed displacement from position a to position b along the
+        shortest arc on the perimeter. Positive = clockwise.
+        Result in range [-P//2, P//2].
+        """
+        delta = (b - a) % P
+        if delta <= P // 2:
+            return delta
         else:
-            X = np.vstack(
-                [
-                    np.array(
-                        [rng.choice(choices_arr[j]) for j in range(dim)], dtype=int
-                    )
-                    for _ in range(n_wolves)
-                ]
-            )
-        for i in range(n_wolves):
-            if not _is_valid(X[i]):
-                X[i] = _attempt_repair(X[i])
-        return X
+            return delta - P
 
-    def _opposition(X: np.ndarray) -> np.ndarray:
-        Xopp = (lb + ub) - X
-        Xopp = np.clip(Xopp, lb, ub)
-        if choices_arr is not None:
-            for i in range(Xopp.shape[0]):
-                Xopp[i] = _snap_to_choices(Xopp[i])
-        return Xopp.astype(int)
+    def circular_mean(positions: List[int]) -> int:
+        """
+        Circular mean of a list of integer positions on perimeter Z_P.
+        Uses angle embedding and atan2.
+        """
+        angles = [2.0 * np.pi * x / P for x in positions]
+        sin_sum = sum(np.sin(th) for th in angles)
+        cos_sum = sum(np.cos(th) for th in angles)
+        mean_angle = np.arctan2(sin_sum, cos_sum)
+        mean_pos = int(np.round(P * mean_angle / (2.0 * np.pi))) % P
+        return mean_pos
 
-    def _rank_population(
-        X: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        F = np.array([_safe_eval(X[i]) for i in range(X.shape[0])], dtype=float)
-        order = np.argsort(F)
-        return X[order], F[order], order, F
+    def check_overlap(x_i: int, x_j: int) -> bool:
+        """Check if two exits starting at x_i and x_j overlap."""
+        return circular_distance(x_i, x_j) < Q
 
-    def _a_value(t: int) -> float:
-        if max_iters <= 1:
-            return 0.0
-        frac = t / (max_iters - 1)
-        if a_schedule == "linear":
-            return 2.0 * (1.0 - frac)
-        if a_schedule == "cosine":
-            return 2.0 * (0.5 * (1.0 + np.cos(np.pi * frac)))
-        raise ValueError("a_schedule must be 'linear' or 'cosine'.")
+    def repair_overlaps(x: np.ndarray) -> np.ndarray:
+        """
+        Repair overlapping exits by shifting them apart.
+        Alternates shift direction based on a parity counter.
+        Ensures all exits are non-overlapping on the circular perimeter.
+        """
+        x = x.copy()
+        # Check if problem is feasible
+        if k * Q >= P:
+            # Infeasible: exits cannot fit. Return as-is (should not happen).
+            return x
 
-    def _local_search(best_x: np.ndarray, best_f: float) -> Tuple[np.ndarray, float]:
-        if local_search_steps <= 0:
-            return best_x, best_f
-        span = (ub - lb).astype(int)
-        max_step = np.maximum(2, (0.03 * span).astype(int))
-        cur_x, cur_f = best_x.copy(), float(best_f)
-        for _ in range(local_search_steps):
-            mask = rng.random(dim) < 0.7
-            if not np.any(mask):
-                mask[rng.integers(0, dim)] = True
-            step = np.zeros(dim, dtype=int)
-            step[mask] = rng.integers(-max_step[mask], max_step[mask] + 1)
-            cand = np.clip(cur_x + step, lb, ub)
-            cand = _snap_to_choices(cand)
-            if not _is_valid(cand):
-                cand = _attempt_repair(cand)
-            f = _safe_eval(cand)
-            if f < cur_f:
-                cur_x, cur_f = cand, f
-        return cur_x, cur_f
+        max_repairs = 100
+        for _ in range(max_repairs):
+            overlap_found = False
+            # Sort positions circularly starting from the smallest
+            order = np.argsort(x)
+            sorted_x = x[order].copy()
 
-    # -------------------------
-    # Initialization
-    # -------------------------
-    X = _init_population()
+            for i in range(k):
+                for j in range(i + 1, k):
+                    if circular_distance(sorted_x[i], sorted_x[j]) < Q:
+                        overlap_found = True
+                        # Shift the second exit clockwise by the deficit
+                        deficit = Q - circular_distance(sorted_x[i], sorted_x[j])
+                        sorted_x[j] = (sorted_x[j] + deficit) % P
 
-    if opposition_init:
-        Xopp = _opposition(X)
-        for i in range(n_wolves):
-            fi = _safe_eval(X[i])
-            fo = _safe_eval(Xopp[i])
-            if fo < fi:
-                X[i] = Xopp[i]
+            x[order] = sorted_x
 
-    X_sorted, F_sorted, _, _ = _rank_population(X)
-    alpha_x, alpha_f = X_sorted[0].copy(), float(F_sorted[0])
-    beta_x, beta_f = X_sorted[1].copy(), float(F_sorted[1])
-    delta_x, delta_f = X_sorted[2].copy(), float(F_sorted[2])
+            if not overlap_found:
+                break
 
-    best_x, best_f = alpha_x.copy(), alpha_f
+        # Final verification and brute-force fix if needed
+        for _ in range(50):
+            any_overlap = False
+            for i in range(k):
+                for j in range(i + 1, k):
+                    if check_overlap(x[i], x[j]):
+                        any_overlap = True
+                        x[j] = (x[i] + Q) % P
+            if not any_overlap:
+                break
 
-    # --- 2. Track initial best time and history containers ---
-    best_found_time = time.time() - t0
-    best_fitness_eval_count = 0
+        return x
 
-    history_pop: Dict[str, List[float]] = {}
+    def aggregate_circular_distance(x: np.ndarray, y: np.ndarray) -> float:
+        """Sum of circular distances across all dimensions."""
+        return sum(circular_distance(int(x[j]), int(y[j])) for j in range(k))
 
-    history_best: List[float] = [best_f]
-    history_alpha: List[float] = [alpha_f]
+    def surrogate_predict(
+        candidate: np.ndarray,
+        archive_X: np.ndarray,
+        archive_f: np.ndarray,
+        q: int
+    ) -> float:
+        """
+        k-NN surrogate prediction for a candidate solution.
+        Returns predicted fitness value.
+        """
+        n_archive = len(archive_f)
+        if n_archive == 0:
+            return float('inf')
 
-    stall = 0
+        distances = np.array([
+            aggregate_circular_distance(candidate, archive_X[i])
+            for i in range(n_archive)
+        ])
 
-    # -------------------------
-    # Main loop
-    # -------------------------
-    for t in range(max_iters):
-        if max_evals is not None and n_evals >= max_evals:
-            if verbose:
-                print(f"[stop] eval budget reached: {n_evals}/{max_evals}")
-            break
+        # Select q nearest neighbors
+        q_actual = min(q, n_archive)
+        nn_indices = np.argpartition(distances, q_actual - 1)[:q_actual]
 
-        a = _a_value(t)
+        # Inverse distance weighting
+        eps = 1e-6
+        weights = np.array([
+            1.0 / (distances[idx] + eps) for idx in nn_indices
+        ])
+        predicted = np.sum(weights * archive_f[nn_indices]) / np.sum(weights)
+        return predicted
 
-        X_new_cont = np.empty((n_wolves, dim), dtype=float)
-        Xa = alpha_x.astype(float)
-        Xb = beta_x.astype(float)
-        Xd = delta_x.astype(float)
-
-        for i in range(n_wolves):
-            Xi = X[i].astype(float)
-            r1a, r2a = rng.random(dim), rng.random(dim)
-            r1b, r2b = rng.random(dim), rng.random(dim)
-            r1d, r2d = rng.random(dim), rng.random(dim)
-
-            Aa = 2.0 * a * r1a - a
-            Ab = 2.0 * a * r1b - a
-            Ad = 2.0 * a * r1d - a
-
-            Ca = 2.0 * r2a
-            Cb = 2.0 * r2b
-            Cd = 2.0 * r2d
-
-            Da = np.abs(Ca * Xa - Xi)
-            Db = np.abs(Cb * Xb - Xi)
-            Dd = np.abs(Cd * Xd - Xi)
-
-            X1 = Xa - Aa * Da
-            X2 = Xb - Ab * Db
-            X3 = Xd - Ad * Dd
-
-            X_new_cont[i] = (X1 + X2 + X3) / 3.0
-
-        X_new = np.vstack([_project_integer(X_new_cont[i]) for i in range(n_wolves)])
+    def perimeter_coverage_init(n_wolves: int) -> np.ndarray:
+        """
+        Perimeter-Coverage Initialization (PCI).
+        Generates n_wolves solutions with exits spread around the perimeter.
+        Returns array of shape (n_wolves, k) with integer positions.
+        """
+        solutions = np.zeros((n_wolves, k), dtype=int)
+        delta_0 = max(1, P // (4 * k))
 
         for i in range(n_wolves):
-            if not _is_valid(X_new[i]):
-                X_new[i] = _attempt_repair(X_new[i])
+            for j in range(k):
+                base = (j * P) // k
+                offset = (i * P) // (n_wolves * k)
+                jitter = int(rng.integers(-delta_0, delta_0 + 1))
+                solutions[i, j] = (base + offset + jitter) % P
 
-        X = X_new
+            # Repair overlaps
+            solutions[i] = repair_overlaps(solutions[i])
 
-        if epd_rate > 0.0 and epd_period > 0 and ((t + 1) % epd_period == 0):
-            X_sorted, F_sorted, order_sorted, _ = _rank_population(X)
-            m = int(np.ceil(epd_rate * n_wolves))
-            if m > 0:
-                worst_idx = order_sorted[-m:]
-                span = (ub - lb).astype(int)
-                step_scale = np.maximum(
-                    2, (0.15 * (1.0 - t / max(1, max_iters - 1)) * span).astype(int)
-                )
-                for j, idx in enumerate(worst_idx):
-                    if j < m // 2:
-                        step = rng.integers(-step_scale, step_scale + 1, size=dim)
-                        cand = np.clip(alpha_x + step, lb, ub)
-                        cand = _snap_to_choices(cand)
-                    else:
-                        if choices_arr is None:
-                            cand = rng.integers(lb, ub + 1, size=dim, dtype=int)
-                        else:
-                            cand = np.array(
-                                [rng.choice(choices_arr[d]) for d in range(dim)],
-                                dtype=int,
-                            )
+        return solutions
 
-                    if not _is_valid(cand):
-                        cand = _attempt_repair(cand)
-                    X[idx] = cand
+    def generate_candidate(
+        wolf: np.ndarray,
+        alpha: np.ndarray,
+        beta: np.ndarray,
+        delta: np.ndarray,
+        a_val: float
+    ) -> np.ndarray:
+        """
+        Generate a new candidate position for an omega wolf using
+        the Circular Discrete Encirclement Operator and
+        Circular Three-Leader Hunting.
+        """
+        new_pos = np.zeros(k, dtype=int)
 
-        # --- 3. Capture Population History ---
-        # Changed unpacking to capture F_all (4th return value)
-        X_sorted, F_sorted, _, F_all = _rank_population(X)
-        history_pop[str(t)] = F_all.tolist()
+        for j in range(k):
+            # Generate random coefficients for each leader
+            targets = []
 
-        alpha_x, alpha_f = X_sorted[0].copy(), float(F_sorted[0])
-        beta_x, beta_f = X_sorted[1].copy(), float(F_sorted[1])
-        delta_x, delta_f = X_sorted[2].copy(), float(F_sorted[2])
+            for leader in [alpha, beta, delta]:
+                r1 = rng.random()
+                r2 = rng.random()
 
-        alpha_x2, alpha_f2 = _local_search(alpha_x, alpha_f)
-        if alpha_f2 < alpha_f:
-            alpha_x, alpha_f = alpha_x2, alpha_f2
+                A_j = 2.0 * a_val * r1 - a_val
+                C_j = 2.0 * r2
 
-        # Global best / elitism
-        if alpha_f < best_f:
-            best_x, best_f = alpha_x.copy(), float(alpha_f)
-            # --- 4. Capture Discovery Time ---
-            best_found_time = time.time() - t0
-            best_fitness_eval_count = fitness_fn.get_evaluation_count()
-            stall = 0
-        else:
-            stall += 1
+                # Signed circular displacement from wolf to leader
+                delta_j = signed_circular_displacement(int(wolf[j]), int(leader[j]))
 
-        worst_i = int(np.argmax([_safe_eval(X[i]) for i in range(n_wolves)]))
-        X[worst_i] = best_x.copy()
+                # Encirclement distance
+                D_j = abs(C_j * delta_j)
 
-        if restart_on_stall and stall >= stall_patience:
-            stall = 0
-            frac = 0.4
-            k_re = max(1, int(frac * n_wolves))
-            idxs = rng.choice(np.arange(n_wolves), size=k_re, replace=False)
-            for idx in idxs:
-                if choices_arr is None:
-                    cand = rng.integers(lb, ub + 1, size=dim, dtype=int)
-                else:
-                    cand = np.array(
-                        [rng.choice(choices_arr[d]) for d in range(dim)], dtype=int
-                    )
-                if not _is_valid(cand):
-                    cand = _attempt_repair(cand)
-                X[idx] = cand
-            X[rng.integers(0, n_wolves)] = best_x.copy()
+                # Circular position update
+                sign_delta = 1 if delta_j >= 0 else -1
+                if delta_j == 0:
+                    sign_delta = 0
 
-        history_best.append(best_f)
-        history_alpha.append(alpha_f)
+                displacement = int(np.round(A_j * D_j * sign_delta))
+                target_j = (int(leader[j]) - displacement) % P
+                targets.append(target_j)
 
-        if verbose and (t % 10 == 0 or t == max_iters - 1):
-            print(
-                f"iter={t:4d}  a={a:.3f}  alpha={alpha_f:.6g}  best={best_f:.6g}  evals={n_evals}"
+            # Circular averaging of three targets
+            # Check if targets are too spread (> P/3 apart)
+            max_spread = max(
+                circular_distance(targets[0], targets[1]),
+                circular_distance(targets[1], targets[2]),
+                circular_distance(targets[0], targets[2])
             )
 
-        if max_evals is not None and n_evals >= max_evals:
-            if verbose:
-                print(f"[stop] eval budget reached: {n_evals}/{max_evals}")
+            if max_spread > P // 3:
+                # Fallback: select target closest to current wolf position
+                dists_to_wolf = [circular_distance(t, int(wolf[j])) for t in targets]
+                new_pos[j] = targets[int(np.argmin(dists_to_wolf))]
+            else:
+                new_pos[j] = circular_mean(targets)
+
+        return new_pos
+
+    # ------------------------------------------------------------------
+    # PHASE 0: INITIALIZATION
+    # ------------------------------------------------------------------
+
+    # Initial pack size
+    N0 = 2 * k + 6
+
+    # Estimated max iterations
+    T = max(1, B_max // N0)
+
+    # Initialize wolves using Perimeter-Coverage Initialization
+    wolves = perimeter_coverage_init(N0)
+
+    # Evaluate all initial wolves
+    archive_X = []
+    archive_f = []
+    B_used = 0
+
+    for i in range(N0):
+        if B_used >= B_max:
+            break
+        fitness_val = psi_evaluate(wolves[i].tolist())
+        archive_X.append(wolves[i].copy())
+        archive_f.append(fitness_val)
+        B_used += 1
+
+    # Convert archive to arrays
+    if len(archive_X) == 0:
+        raise ValueError("Budget too small to evaluate even one solution.")
+
+    archive_X_arr = np.array(archive_X)
+    archive_f_arr = np.array(archive_f)
+
+    # Sort by fitness to assign hierarchy
+    sorted_indices = np.argsort(archive_f_arr)
+    alpha_idx = sorted_indices[0]
+    beta_idx = sorted_indices[1] if len(sorted_indices) > 1 else sorted_indices[0]
+    delta_idx = sorted_indices[2] if len(sorted_indices) > 2 else sorted_indices[0]
+
+    x_alpha = archive_X_arr[alpha_idx].copy()
+    x_beta = archive_X_arr[beta_idx].copy()
+    x_delta = archive_X_arr[delta_idx].copy()
+    f_alpha = archive_f_arr[alpha_idx]
+    f_beta = archive_f_arr[beta_idx]
+    f_delta = archive_f_arr[delta_idx]
+
+    # Current pack (working population)
+    current_wolves = wolves.copy()
+    current_fitness = archive_f_arr[:N0].copy()
+
+    t = 0  # iteration counter
+
+    # ------------------------------------------------------------------
+    # PHASE 1-3: MAIN LOOP
+    # ------------------------------------------------------------------
+
+    while B_used < B_max and t < T:
+        t += 1
+
+        # --- Parameter Update (Budget-Aware Nonlinear Schedule) ---
+        progress = t / T  # in (0, 1]
+        a_val = 2.0 * (1.0 - progress ** gamma)
+
+        # Adaptive pack size
+        N_t = max(2 * k + 2, int(np.floor(N0 * (1.0 - progress) ** 0.5)))
+
+        # Screening threshold (linearly interpolated)
+        lambda_t = lambda_init + (lambda_final - lambda_init) * progress
+
+        # --- Generate Candidates ---
+        candidates = []
+        n_omegas = max(1, N_t - 3)  # wolves excluding alpha, beta, delta roles
+
+        for i in range(n_omegas):
+            # Select a random wolf from current pack as the "omega" to update
+            wolf_idx = rng.integers(0, len(current_wolves))
+            wolf = current_wolves[wolf_idx].copy()
+
+            # Generate new candidate via Circular Three-Leader Hunting
+            candidate = generate_candidate(wolf, x_alpha, x_beta, x_delta, a_val)
+
+            # Apply overlap repair
+            candidate = repair_overlaps(candidate)
+
+            candidates.append(candidate)
+
+        # --- Local Perturbation (Phase 3: last 30% of iterations) ---
+        if progress > 0.7 and rng.random() < p_local and len(candidates) > 0:
+            # Replace one candidate with a local perturbation of alpha
+            pert_idx = rng.integers(0, len(candidates))
+            pert_candidate = x_alpha.copy()
+            j_rand = rng.integers(0, k)
+            shift = int(rng.integers(-max(1, Q // 2), max(1, Q // 2) + 1))
+            pert_candidate[j_rand] = (int(pert_candidate[j_rand]) + shift) % P
+            pert_candidate = repair_overlaps(pert_candidate)
+            candidates[pert_idx] = pert_candidate
+
+        # --- Surrogate Screening ---
+        surviving_candidates = []
+        n_archive = len(archive_f_arr)
+
+        if n_archive >= q_neighbors + 2:
+            f_worst = np.max(archive_f_arr)
+            for cand in candidates:
+                predicted_f = surrogate_predict(cand, archive_X_arr, archive_f_arr, q_neighbors)
+                # Accept if predicted fitness is not too bad
+                if predicted_f < f_alpha + lambda_t * (f_worst - f_alpha):
+                    surviving_candidates.append(cand)
+                # If rejected, skip evaluation (saves budget)
+        else:
+            # Not enough data for surrogate; evaluate all
+            surviving_candidates = candidates
+
+        # --- Evaluate Surviving Candidates ---
+        new_evaluations_X = []
+        new_evaluations_f = []
+
+        for cand in surviving_candidates:
+            if B_used >= B_max:
+                break
+            fitness_val = psi_evaluate(cand.tolist())
+            new_evaluations_X.append(cand.copy())
+            new_evaluations_f.append(fitness_val)
+            B_used += 1
+
+        # --- Update Archive ---
+        if len(new_evaluations_X) > 0:
+            new_X_arr = np.array(new_evaluations_X)
+            new_f_arr = np.array(new_evaluations_f)
+            archive_X_arr = np.vstack([archive_X_arr, new_X_arr])
+            archive_f_arr = np.concatenate([archive_f_arr, new_f_arr])
+
+        # --- Update Hierarchy ---
+        # Find top 3 from entire archive
+        sorted_all = np.argsort(archive_f_arr)
+        alpha_idx = sorted_all[0]
+        beta_idx = sorted_all[1] if len(sorted_all) > 1 else sorted_all[0]
+        delta_idx = sorted_all[2] if len(sorted_all) > 2 else sorted_all[0]
+
+        x_alpha = archive_X_arr[alpha_idx].copy()
+        x_beta = archive_X_arr[beta_idx].copy()
+        x_delta = archive_X_arr[delta_idx].copy()
+        f_alpha = archive_f_arr[alpha_idx]
+
+        # --- Update Working Pack ---
+        # Keep the best N_t solutions from archive as current wolves
+        top_indices = sorted_all[:N_t]
+        current_wolves = archive_X_arr[top_indices].copy()
+        current_fitness = archive_f_arr[top_indices].copy()
+
+        # --- Budget Check ---
+        if B_used >= B_max:
             break
 
-    return (
-        best_x.astype(int).tolist(),
-        best_f,
-        history_best,
-        history_alpha,
-        history_pop,
-        best_found_time,
-        best_fitness_eval_count,
+    # ------------------------------------------------------------------
+    # PHASE 4: TERMINATION
+    # ------------------------------------------------------------------
+
+    best_solution = x_alpha.copy()
+    best_fitness = f_alpha
+
+    return best_solution, best_fitness
+
+
+# ======================================================================
+# USAGE EXAMPLE (fitness function stub for testing)
+# ======================================================================
+
+def psi_evaluate(solution: List[int]) -> float:
+    """
+    Placeholder fitness function.
+    Replace this with the actual evacuation simulator call.
+
+    Parameters
+    ----------
+    solution : list of int
+        Vector of k integers, each in [0, perimeter_length).
+        Represents start positions of emergency exits.
+
+    Returns
+    -------
+    float
+        Fitness value (lower is better).
+    """
+    # --- REPLACE THIS WITH YOUR ACTUAL SIMULATOR CALL ---
+    # Example: return your_simulator.evaluate(solution)
+    raise NotImplementedError(
+        "Replace this stub with the actual psi_evaluate fitness function."
     )
+
+
+# ======================================================================
+# MAIN ENTRY POINT
+# ======================================================================
+
+if __name__ == "__main__":
+
+    # Problem parameters
+    k = 3              # number of emergency exits
+    P = 400            # perimeter length (e.g., 100x100 grid)
+    Q = 5              # exit width in cells
+    B_max = 600        # evaluation budget
+    gamma = 2.0        # nonlinear decay shape
+    seed = 42          # reproducibility
+
+    # Run PA-DGWO
+    best_sol, best_fit = pa_dgwo(
+        k=k,
+        P=P,
+        Q=Q,
+        B_max=B_max,
+        gamma=gamma,
+        seed=seed
+    )
+
+    print(f"Best solution (exit positions): {best_sol.tolist()}")
+    print(f"Best fitness: {best_fit:.6f}")
